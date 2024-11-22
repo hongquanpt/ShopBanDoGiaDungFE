@@ -2,10 +2,6 @@
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
-@{
-    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
-}
-
 <div class="wrapper">
 
     <!-- Content Wrapper. Contains page content -->
@@ -15,14 +11,15 @@
         <section class="content">
             <div class="container-fluid">
                 <div class="row">
+                    <!-- Nút quản lý chức vụ bên ngoài bảng -->
+                               
                     <div class="col-12">
 
 
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <label class="card-title">Quản lý tài khoản</label>
-                                <!-- Nút quản lý chức vụ bên ngoài bảng -->
-                                <button class="btn btn-secondary" id="manageRolesButton">Quản lý Chức vụ</button>
+                                
                             </div>
 
 
@@ -51,32 +48,38 @@
                                 <!-- /.card-body -->
                             </div>
                             <!-- /.card-header -->
+                             <button class="btn btn-secondary" id="manageRolesButton">Quản lý quyền của từng chức vụ</button>
                             <!-- /.card-body -->
                         </div>
                         <!-- /.card -->
+
                     </div>
                     <!-- Nút thêm tài khoản mới -->
                     <!-- /.col -->
+
                 </div>
                 <!-- /.row -->
+
         </section>
+
     </div>
+
 </div>
 
-<!-- Modal Quản Lý Quyền của Người Dùng -->
+<!-- Modal Quản Lý Roles của Người Dùng -->
 <div class="modal fade" id="permissionModal" tabindex="-1" role="dialog" aria-labelledby="permissionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <!-- Tiêu đề Modal -->
             <div class="modal-header">
-                <h5 class="modal-title" id="permissionModalLabel">Quản lý quyền cho tài khoản</h5>
+                <h5 class="modal-title" id="permissionModalLabel">Quyền hiện tại của tài khoản</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <!-- Nội dung Modal -->
             <div class="modal-body">
-                <!-- Cây quyền sẽ được tải ở đây -->
+                <!-- Cây chức vụ sẽ được tải ở đây -->
                 <div id="permissionTree"></div>
             </div>
             <!-- Chân Modal -->
@@ -94,7 +97,7 @@
         <div class="modal-content">
             <!-- Tiêu đề Modal -->
             <div class="modal-header">
-                <h5 class="modal-title" id="manageRolesModalLabel">Quản lý Chức vụ và Quyền</h5>
+                <h5 class="modal-title" id="manageRolesModalLabel">Quản lý quyền của từng chức vụ</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -114,7 +117,10 @@
 </div>
 
 <!-- Bao gồm các script cần thiết -->
-<script src="~/new/jwt-decode.min.js"></script>
+<!-- Select2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<!-- jQuery -->
 <script src="~/Admin/plugins/jquery/jquery.min.js"></script>
 <!-- Bootstrap 4 -->
 <script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -128,8 +134,11 @@
 <!-- jsTree -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
-
+<!-- Select2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<!-- AdminLTE App -->
 <script src="~/Admin/dist/js/adminlte.min.js"></script>
+
 <script>
     $(document).ready(function () {
         // Sử dụng async/await để xử lý các yêu cầu bất đồng bộ
@@ -194,22 +203,15 @@
                         tbody.empty();
                         console.log(users);
                         users.forEach(user => {
-                            // Tạo HTML cho chức vụ và quyền
+                            // Tạo HTML cho chức vụ với Select2
                             const rolesHtml = `
-                                <ul>
-                                    ${user.chucVus.map(role => `
-                                        <li>
-                                            <strong>${role.tenChucVu}</strong>
-                                            ${role.PhanQuyens && role.PhanQuyens.length > 0 ? `
-                                                <ul>
-                                                    ${role.PhanQuyens.map(p => `
-                                                        <li>${p.MaChucNangNavigation.tenChucNang} - ${p.MaHanhDongNavigation.tenHanhDong}</li>
-                                                    `).join('')}
-                                                </ul>
-                                            ` : ''}
-                                        </li>
+                                <select class="form-control role-select" multiple="multiple" style="width: 100%;" data-user-id="${user.maTaiKhoan}">
+                                    ${allRoles.map(role => `
+                                        <option value="${role.maChucVu}" ${user.chucVus.some(tc => tc.maChucVu === role.maChucVu) ? 'selected' : ''}>
+                                            ${role.tenChucVu}
+                                        </option>
                                     `).join('')}
-                                </ul>
+                                </select>
                             `;
 
                             const row = `
@@ -222,7 +224,7 @@
                                     <td>${user.email}</td>
                                     <td>${rolesHtml}</td>
                                     <td>
-                                        <button class="btn btn-primary manage-permissions" data-user-id="${user.maTaiKhoan}">Quản lý quyền</button>
+                                        <button class="btn btn-primary manage-permissions" data-user-id="${user.maTaiKhoan}">Xem quyền</button>
                                     </td>
                                     <td><button class="btn btn-danger delete-user" data-user-id="${user.maTaiKhoan}">Xóa</button></td>
                                 </tr>
@@ -248,6 +250,32 @@
                                 "search": "Tìm kiếm:"
                             }
                         });
+
+                        // Khởi tạo Select2 cho các select trong cột Chức vụ
+                        $('.role-select').select2({
+                            placeholder: "Chọn chức vụ",
+                            allowClear: true
+                        });
+
+                        // Xử lý sự kiện thay đổi chức vụ cho từng user
+                        $('.role-select').on('change', async function () {
+                            const userId = $(this).data('user-id');
+                            const selectedRoles = $(this).val() || [];
+
+                            try {
+                                // Gửi danh sách roleIds lên API (sử dụng POST)
+                                await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: selectedRoles.map(id => parseInt(id)) });
+                                alert('Cập nhật chức vụ thành công');
+                                loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
+                            } catch (error) {
+                                console.error('Lỗi khi cập nhật chức vụ:', error);
+                                if (error.message) {
+                                    alert('Lỗi: ' + error.message);
+                                } else {
+                                    alert('Không thể cập nhật chức vụ.');
+                                }
+                            }
+                        });
                     } catch (error) {
                         console.error('Lỗi khi lấy danh sách tài khoản:', error);
                         alert('Không thể tải danh sách tài khoản.');
@@ -255,9 +283,11 @@
                 }
 
                 // Gọi API để lấy danh sách chức vụ
+                let allRoles = [];
                 async function getAllRoles() {
                     try {
                         const roles = await apiCall('https://localhost:7248/api/ChucVu');
+                        allRoles = roles; // Lưu danh sách roles để sử dụng trong loadUsers
                         return roles;
                     } catch (error) {
                         console.error('Lỗi khi lấy danh sách chức vụ:', error);
@@ -306,13 +336,13 @@
                     }
                 });
 
-                // Xử lý sự kiện "Quản lý quyền" của người dùng
+                // Xử lý sự kiện "Quản lý chức vụ" của người dùng
                 $(document).on('click', '.manage-permissions', async function () {
                     const userId = $(this).data('user-id');
                     openPermissionModal(userId);
                 });
 
-                // Hàm mở modal và tải cây quyền hạn cho người dùng
+                // Hàm mở modal và tải cây chức vụ cho người dùng
                 async function openPermissionModal(userId) {
                     try {
                         // Tải tất cả các chức vụ, chức năng và hành động
@@ -407,7 +437,7 @@
                     }
                 }
 
-                // Xử lý sự kiện lưu quyền cho người dùng
+                // Xử lý sự kiện lưu chức vụ cho người dùng
                 $('.save-permissions').on('click', async function () {
                     try {
                         const userId = $('#permissionModal').data('user-id');
@@ -443,11 +473,11 @@
                         });
 
                         // Gửi các chức vụ được chọn lên API (sử dụng POST)
-                        await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { RoleIds: rolesToAssign });
+                        await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: rolesToAssign });
 
                         // Gửi các quyền được chọn cho từng chức vụ lên API (sử dụng POST)
                         const permissionPromises = Object.keys(permissionsToAssign).map(roleId => {
-                            return apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/permissions`, 'POST', { Permissions: permissionsToAssign[roleId] });
+                            return apiCall(`https://localhost:7248/api/ChucVu/${roleId}/permissions`, 'POST', { permissions: permissionsToAssign[roleId] });
                         });
 
                         await Promise.all(permissionPromises);
@@ -499,7 +529,7 @@
                             rolePermissionMap[rolePerm.roleId] = rolePerm.permissions;
                         });
 
-                        // Xây dựng dữ liệu cho jsTree
+                        // Xây dựng dữ liệu cho jsTree (nếu quản lý permissions)
                         const treeData = allRoles.map(role => {
                             const rolePermissions = rolePermissionMap[role.maChucVu] || [];
 
@@ -609,6 +639,8 @@
                     }
                 });
 
+                // Tải danh sách chức vụ trước khi tải người dùng để đảm bảo danh sách roles có sẵn
+                await getAllRoles();
                 // Tải danh sách người dùng khi trang được tải
                 loadUsers();
 
