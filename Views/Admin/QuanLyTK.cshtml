@@ -2,6 +2,10 @@
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
 }
 
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
 <div class="wrapper">
 
     <!-- Content Wrapper. Contains page content -->
@@ -15,8 +19,10 @@
 
 
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <label class="card-title">Quản lý tài khoản</label>
+                                <!-- Nút quản lý chức vụ bên ngoài bảng -->
+                                <button class="btn btn-secondary" id="manageRolesButton">Quản lý Chức vụ</button>
                             </div>
 
 
@@ -57,13 +63,13 @@
     </div>
 </div>
 
-<!-- Modal Quản Lý Quyền -->
+<!-- Modal Quản Lý Quyền của Người Dùng -->
 <div class="modal fade" id="permissionModal" tabindex="-1" role="dialog" aria-labelledby="permissionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <!-- Tiêu đề Modal -->
             <div class="modal-header">
-                <h5 class="modal-title" id="permissionModalLabel">Quản lý quyền cho chức vụ</h5>
+                <h5 class="modal-title" id="permissionModalLabel">Quản lý quyền cho tài khoản</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -75,7 +81,32 @@
             </div>
             <!-- Chân Modal -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary save-permissions">Lưu</button>
+               @*  <button type="button" class="btn btn-primary save-permissions">Lưu</button> *@
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Quản Lý Chức Vụ và Quyền -->
+<div class="modal fade" id="manageRolesModal" tabindex="-1" role="dialog" aria-labelledby="manageRolesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <!-- Tiêu đề Modal -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageRolesModalLabel">Quản lý Chức vụ và Quyền</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <!-- Nội dung Modal -->
+            <div class="modal-body">
+                <!-- Cây quyền cho chức vụ -->
+                <div id="manageRolesTree"></div>
+            </div>
+            <!-- Chân Modal -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary save-roles-permissions">Lưu</button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
             </div>
         </div>
@@ -99,73 +130,106 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 
 <script src="~/Admin/dist/js/adminlte.min.js"></script>
-
-<!-- Script để gọi API và hiển thị dữ liệu -->
 <script>
     $(document).ready(function () {
-        // Lấy token từ localStorage
-        var token = localStorage.getItem('token');
-        if (!token) {
-            // Chưa đăng nhập, chuyển hướng đến trang đăng nhập
-            window.location.href = '/login';
-            return;
-        }
+        // Sử dụng async/await để xử lý các yêu cầu bất đồng bộ
+        (async function () {
+            try {
+                // Lấy token từ localStorage
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    // Chưa đăng nhập, chuyển hướng đến trang đăng nhập
+                    window.location.href = '/login';
+                    return;
+                }
 
-        // Giải mã token để lấy vai trò
-        var decodedToken = jwt_decode(token);
-        var roles = decodedToken.role;
+                // Giải mã token để lấy vai trò
+                const decodedToken = jwt_decode(token);
+                const userRolesFromToken = decodedToken.role;
 
-        // Kiểm tra xem người dùng có vai trò 'admin' không
-        var isAdmin = false;
-        if (Array.isArray(roles)) {
-            isAdmin = roles.includes('admin');
-        } else {
-            isAdmin = roles === 'admin';
-        }
+                // Kiểm tra xem người dùng có vai trò 'admin' không
+                let isAdmin = false;
+                if (Array.isArray(userRolesFromToken)) {
+                    isAdmin = userRolesFromToken.includes('admin');
+                } else {
+                    isAdmin = userRolesFromToken === 'admin';
+                }
 
-        if (!isAdmin) {
-            alert('Bạn không có quyền truy cập trang này.');
-            window.location.href = '/'; // Chuyển hướng đến trang chủ hoặc trang thông báo
-            return;
-        }
+                if (!isAdmin) {
+                    alert('Bạn không có quyền truy cập trang này.');
+                    window.location.href = '/'; // Chuyển hướng đến trang chủ hoặc trang thông báo
+                    return;
+                }
 
-        // Người dùng là admin, tiếp tục tải trang
+                // Hàm để gọi API với token
+                const apiCall = async (url, method = 'GET', data = null) => {
+                    const options = {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        }
+                    };
+                    if (data) {
+                        options.body = JSON.stringify(data);
+                    }
+                    const response = await fetch(url, options);
+                    let responseData = null;
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        responseData = await response.json();
+                    }
+                    if (!response.ok) {
+                        throw responseData || { message: 'Không thể thực hiện yêu cầu.' };
+                    }
+                    return responseData;
+                };
 
-        // Gọi API để lấy danh sách tài khoản
-        function loadUsers() {
-            getAllRoles(function (allRoles) {
-                $.ajax({
-                    url: 'https://localhost:7248/api/TaiKhoan',
-                    method: 'GET',
-                    dataType: 'json',
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                    },
-                    success: function (data) {
-                        var tbody = $('#userTable tbody');
+                // Gọi API để lấy danh sách tài khoản
+                async function loadUsers() {
+                    try {
+                        const users = await apiCall('https://localhost:7248/api/TaiKhoan');
+
+                        const tbody = $('#userTable tbody');
                         tbody.empty();
-                        console.log(data);
-                        data.forEach(function (user) {
-                            console.log(user);
-                            var row = '<tr>' +
-                                '<td>' + user.maTaiKhoan + '</td>' +
-                                '<td>' + user.ten + '</td>' +
-                                '<td>' + (user.ngaySinh ? new Date(user.ngaySinh).toLocaleDateString() : 'Không xác định') + '</td>' +
-                                '<td>' + user.diaChi + '</td>' +
-                                '<td>' + user.sdt + '</td>' +
-                                '<td>' + user.email + '</td>' +
-                                '<td>' +
-                                '<select class="form-control role-select" data-user-id="' + user.maTaiKhoan + '" multiple>' +
-                                getRoleOptions(user, allRoles) +
-                                '</select>' +
-                                '</td>' +
-                                '<td>' +
-                                '<button class="btn btn-primary manage-permissions" data-user-id="' + user.maTaiKhoan + '">Quản lý quyền</button>' +
-                                '</td>' +
-                                '<td><button class="btn btn-danger delete-user" data-user-id="' + user.maTaiKhoan + '">Xóa</button></td>' +
-                                '</tr>';
+                        console.log(users);
+                        users.forEach(user => {
+                            // Tạo HTML cho chức vụ và quyền
+                            const rolesHtml = `
+                                <ul>
+                                    ${user.chucVus.map(role => `
+                                        <li>
+                                            <strong>${role.tenChucVu}</strong>
+                                            ${role.PhanQuyens && role.PhanQuyens.length > 0 ? `
+                                                <ul>
+                                                    ${role.PhanQuyens.map(p => `
+                                                        <li>${p.MaChucNangNavigation.tenChucNang} - ${p.MaHanhDongNavigation.tenHanhDong}</li>
+                                                    `).join('')}
+                                                </ul>
+                                            ` : ''}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            `;
+
+                            const row = `
+                                <tr>
+                                    <td>${user.maTaiKhoan}</td>
+                                    <td>${user.ten}</td>
+                                    <td>${user.ngaySinh ? new Date(user.ngaySinh).toLocaleDateString() : 'Không xác định'}</td>
+                                    <td>${user.diaChi}</td>
+                                    <td>${user.sdt}</td>
+                                    <td>${user.email}</td>
+                                    <td>${rolesHtml}</td>
+                                    <td>
+                                        <button class="btn btn-primary manage-permissions" data-user-id="${user.maTaiKhoan}">Quản lý quyền</button>
+                                    </td>
+                                    <td><button class="btn btn-danger delete-user" data-user-id="${user.maTaiKhoan}">Xóa</button></td>
+                                </tr>
+                            `;
                             tbody.append(row);
                         });
+
                         // Khởi tạo hoặc cập nhật DataTable
                         if ($.fn.DataTable.isDataTable('#userTable')) {
                             $('#userTable').DataTable().destroy();
@@ -184,281 +248,374 @@
                                 "search": "Tìm kiếm:"
                             }
                         });
-                    },
-                    error: function (error) {
+                    } catch (error) {
                         console.error('Lỗi khi lấy danh sách tài khoản:', error);
-                    }
-                });
-            });
-        }
-
-        // Hàm để lấy danh sách chức vụ
-        function getAllRoles(callback) {
-            $.ajax({
-                url: 'https://localhost:7248/api/ChucVu',
-                method: 'GET',
-                dataType: 'json',
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                },
-                success: function (data) {
-                    callback(data);
-                },
-                error: function (error) {
-                    console.error('Lỗi khi lấy danh sách chức vụ:', error);
-                }
-            });
-        }
-
-        // Hàm để tạo các tùy chọn chức vụ cho select
-        function getRoleOptions(user, allRoles) {
-            var options = '';
-            if (!user.chucVus || !Array.isArray(user.chucVus)) {
-                console.error('User chucVus is undefined or not an array:', user);
-                return options;
-            }
-            var userRoleIds = user.chucVus.map(role => role.maChucVu);
-            allRoles.forEach(function (role) {
-                var selected = userRoleIds.includes(role.maChucVu) ? 'selected' : '';
-                options += '<option value="' + role.maChucVu + '" ' + selected + '>' + role.tenChucVu + '</option>';
-            });
-            return options;
-        }
-
-        // Tải danh sách người dùng khi trang được tải
-        loadUsers();
-
-        // Xử lý sự kiện thay đổi chức vụ
-        $('#userTable').on('change', '.role-select', function () {
-            var userId = $(this).data('user-id');
-            var selectedRoleIds = $(this).val();
-            var requestData = {
-                RoleIds : selectedRoleIds
-            };
-
-            console.log("Dữ liệu gửi lên API:", JSON.stringify(requestData));
-
-            $.ajax({
-                url: 'https://localhost:7248/api/TaiKhoan/' + userId + '/roles',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(requestData),
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                },
-                success: function () {
-                    alert('Cập nhật chức vụ thành công');
-                },
-                error: function (error) {
-                    console.error('Lỗi khi cập nhật chức vụ:', error);
-                    if (error.responseJSON && error.responseJSON.errors) {
-                        var errors = error.responseJSON.errors;
-                        var errorMessages = [];
-                        for (var key in errors) {
-                            if (errors.hasOwnProperty(key)) {
-                                errorMessages = errorMessages.concat(errors[key]);
-                            }
-                        }
-                        alert('Lỗi: ' + errorMessages.join('\n'));
-                    } else {
-                        alert('Không thể cập nhật chức vụ');
+                        alert('Không thể tải danh sách tài khoản.');
                     }
                 }
-            });
-        });
 
-        // Xử lý sự kiện xóa tài khoản
-        $('#userTable').on('click', '.delete-user', function () {
-            var userId = $(this).data('user-id');
-
-            if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
-                $.ajax({
-                    url: 'https://localhost:7248/api/TaiKhoan/' + userId,
-                    method: 'DELETE',
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                    },
-                    success: function () {
-                        alert('Xóa tài khoản thành công');
-                        loadUsers();
-                    },
-                    error: function (error) {
-                        console.error('Lỗi khi xóa tài khoản:', error);
-                        alert('Không thể xóa tài khoản');
+                // Gọi API để lấy danh sách chức vụ
+                async function getAllRoles() {
+                    try {
+                        const roles = await apiCall('https://localhost:7248/api/ChucVu');
+                        return roles;
+                    } catch (error) {
+                        console.error('Lỗi khi lấy danh sách chức vụ:', error);
+                        alert('Không thể tải danh sách chức vụ.');
+                        return [];
                     }
-                });
-            }
-        });
+                }
 
-        // Xử lý sự kiện "Quản lý quyền"
-        $('#userTable').on('click', '.manage-permissions', function () {
-            var userId = $(this).data('user-id');
-
-
-            $.ajax({
-                url: 'https://localhost:7248/api/TaiKhoan/' + userId + '/roles',
-                method: 'GET',
-                dataType: 'json',
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                },
-                success: function (roles) {
-                    if (roles.length > 0) {
-                        var role = roles[0];
-                        var roleId = role.maChucVu;
-                        var maDonVi = 1; // Lấy MaDonVi từ role
-                        openPermissionModal(roleId, maDonVi);
-                    } else {
-                        alert('Người dùng chưa được gán chức vụ.');
+                // Gọi API để lấy danh sách chức năng
+                async function getAllFunctions() {
+                    try {
+                        const functions = await apiCall('https://localhost:7248/api/ChucNang');
+                        return functions;
+                    } catch (error) {
+                        console.error('Lỗi khi lấy danh sách chức năng:', error);
+                        alert('Không thể tải danh sách chức năng.');
+                        return [];
                     }
-                },
-                error: function (error) {
-                    console.error('Lỗi khi lấy chức vụ của người dùng:', error);
                 }
-            });
-        });
 
-        function openPermissionModal(roleId, maDonVi) {
-            // Lấy tất cả các chức năng và hành động
-            $.ajax({
-                url: 'https://localhost:7248/api/ChucNang',
-                method: 'GET',
-                dataType: 'json',
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                },
-                success: function (allFunctions) {
-                    // Lấy quyền của chức vụ
-                    $.ajax({
-                        url: 'https://localhost:7248/api/ChucVu/' + roleId + '/permissions',
-                        method: 'GET',
-                        dataType: 'json',
-                        beforeSend: function (xhr) {
-                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                        },
-                        success: function (rolePermissions) {
-                            buildPermissionTree(allFunctions, rolePermissions, maDonVi);
-                            $('#permissionModal').data('role-id', roleId).modal('show');
-                        },
-                        error: function (error) {
-                            console.error('Lỗi khi lấy quyền của chức vụ:', error);
-                        }
-                    });
-                },
-                error: function (error) {
-                    console.error('Lỗi khi lấy danh sách chức năng:', error);
-                }
-            });
-        }
-
-        function buildPermissionTree(allFunctions, rolePermissions, maDonVi) {
-            var treeData = [];
-
-            allFunctions.forEach(function (func) {
-                var funcNode = {
-                    text: func.tenChucNang,
-                    children: []
-                };
-
-                // Lấy các hành động cho chức năng này
-                $.ajax({
-                    url: 'https://localhost:7248/api/HanhDong',
-                    method: 'GET',
-                    dataType: 'json',
-                    async: false, // Để đảm bảo các hành động được tải trước khi tiếp tục
-                    beforeSend: function (xhr) {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                    },
-                    success: function (actions) {
-                        actions.forEach(function (action) {
-                            var permissionExists = rolePermissions.some(function (perm) {
-                                return perm.maChucNang === func.maChucNang && perm.maHanhDong === action.maHanhDong;
-                            });
-
-                            funcNode.children.push({
-                                id: func.maChucNang + '-' + action.maHanhDong,
-                                text: action.tenHanhDong,
-                                state: {
-                                    selected: permissionExists
-                                }
-                            });
-                        });
-                    },
-                    error: function (error) {
+                // Gọi API để lấy danh sách hành động
+                async function getAllActions() {
+                    try {
+                        const actions = await apiCall('https://localhost:7248/api/HanhDong');
+                        return actions;
+                    } catch (error) {
                         console.error('Lỗi khi lấy danh sách hành động:', error);
+                        alert('Không thể tải danh sách hành động.');
+                        return [];
+                    }
+                }
+
+                // Xử lý sự kiện xóa tài khoản
+                $(document).on('click', '.delete-user', async function () {
+                    const userId = $(this).data('user-id');
+
+                    if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
+                        try {
+                            await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}`, 'DELETE');
+                            alert('Xóa tài khoản thành công');
+                            loadUsers();
+                        } catch (error) {
+                            console.error('Lỗi khi xóa tài khoản:', error);
+                            alert('Không thể xóa tài khoản.');
+                        }
                     }
                 });
 
-                treeData.push(funcNode);
-            });
+                // Xử lý sự kiện "Quản lý quyền" của người dùng
+                $(document).on('click', '.manage-permissions', async function () {
+                    const userId = $(this).data('user-id');
+                    openPermissionModal(userId);
+                });
 
-            // Khởi tạo jsTree
-            $('#permissionTree').jstree('destroy');
-            $('#permissionTree').jstree({
-                'core': {
-                    'data': treeData
-                },
-                'checkbox': {
-                    'keep_selected_style': false,
-                    'three_state': false
-                },
-                'plugins': ['checkbox']
-            });
+                // Hàm mở modal và tải cây quyền hạn cho người dùng
+                async function openPermissionModal(userId) {
+                    try {
+                        // Tải tất cả các chức vụ, chức năng và hành động
+                        const [allRoles, allFunctions, allActions] = await Promise.all([
+                            getAllRoles(),
+                            getAllFunctions(),
+                            getAllActions()
+                        ]);
 
-            // Lưu MaDonVi vào data của modal để sử dụng khi lưu
-            $('#permissionModal').data('maDonVi', maDonVi);
-        }
+                        // Lấy tất cả các chức vụ được gán cho người dùng
+                        const userRoles = await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`);
 
-       $('.save-permissions').on('click', function () {
-    var roleId = $('#permissionModal').data('role-id');
-    var maDonVi = $('#permissionModal').data('maDonVi');
-    var selectedNodes = $('#permissionTree').jstree('get_selected', true);
-    var permissions = selectedNodes
-        .filter(node => !node.children.length)
-        .map(node => {
-            var ids = node.id.split('-');
-            return {
-                maChucNang: parseInt(ids[0]),
-                maHanhDong: parseInt(ids[1]),
-                maDonVi: maDonVi // Đảm bảo MaDonVi có giá trị hợp lệ
-            };
-        });
+                        // Lấy quyền của từng chức vụ được gán cho người dùng
+                        const rolePermissionsPromises = userRoles.map(role =>
+                            apiCall(`https://localhost:7248/api/ChucVu/${role.maChucVu}/permissions`)
+                                .then(perms => ({ roleId: role.maChucVu, permissions: perms }))
+                                .catch(err => {
+                                    console.error(`Lỗi khi lấy quyền của chức vụ ${role.maChucVu}:`, err);
+                                    return { roleId: role.maChucVu, permissions: [] };
+                                })
+                        );
 
-    // Gửi mảng trực tiếp thay vì bọc trong trường 'permissions'
-    var requestData = permissions;
+                        const rolesWithPermissions = await Promise.all(rolePermissionsPromises);
 
-    console.log("Dữ liệu gửi lên API:", JSON.stringify(requestData));
+                        // Tạo một bản đồ để dễ dàng tra cứu quyền theo chức vụ và chức năng
+                        const rolePermissionMap = {};
+                        rolesWithPermissions.forEach(rolePerm => {
+                            rolePermissionMap[rolePerm.roleId] = rolePerm.permissions;
+                        });
 
-    $.ajax({
-        url: 'https://localhost:7248/api/ChucVu/' + roleId + '/permissions',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(requestData), // Gửi mảng trực tiếp
-        beforeSend: function (xhr) {
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-        },
-        success: function () {
-            alert('Cập nhật quyền thành công');
-            $('#permissionModal').modal('hide');
-            loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
-        },
-        error: function (error) {
-            console.error('Lỗi khi cập nhật quyền:', error);
-            if (error.responseJSON && error.responseJSON.errors) {
-                var errors = error.responseJSON.errors;
-                var errorMessages = [];
-                for (var key in errors) {
-                    if (errors.hasOwnProperty(key)) {
-                        errorMessages = errorMessages.concat(errors[key]);
+                        // Xây dựng dữ liệu cho jsTree
+                        const treeData = allRoles.map(role => {
+                            const isRoleAssigned = userRoles.some(userRole => userRole.maChucVu === role.maChucVu);
+                            const rolePermissions = rolePermissionMap[role.maChucVu] || [];
+
+                            const roleNode = {
+                                id: `role-${role.maChucVu}`,
+                                text: role.tenChucVu,
+                                state: {
+                                    selected: isRoleAssigned
+                                },
+                                children: allFunctions.map(func => {
+                                    // Kiểm tra nếu chức vụ có bất kỳ quyền nào liên quan đến chức năng này
+                                    const funcPermissions = rolePermissions.filter(p => p.maChucNang === func.maChucNang);
+                                    const hasFuncPermission = funcPermissions.length > 0;
+
+                                    const funcNode = {
+                                        id: `func-${role.maChucVu}-${func.maChucNang}`,
+                                        text: func.tenChucNang,
+                                        state: {
+                                            selected: hasFuncPermission
+                                        },
+                                        children: allActions.map(action => {
+                                            const hasPermission = rolePermissions.some(p => p.maChucNang === func.maChucNang && p.maHanhDong === action.maHanhDong);
+                                            return {
+                                                id: `perm-${role.maChucVu}-${func.maChucNang}-${action.maHanhDong}`,
+                                                text: action.tenHanhDong,
+                                                state: {
+                                                    selected: hasPermission
+                                                }
+                                            };
+                                        })
+                                    };
+
+                                    return funcNode;
+                                })
+                            };
+
+                            return roleNode;
+                        });
+
+                        // Khởi tạo jsTree với cấu hình cascade 'none' để không tự động chọn cha hoặc con
+                        $('#permissionTree').jstree('destroy');
+                        $('#permissionTree').jstree({
+                            'core': {
+                                'data': treeData
+                            },
+                            'checkbox': {
+                                'keep_selected_style': false,
+                                'three_state': false,
+                                'cascade': 'none' // Không cascade chọn
+                            },
+                            'plugins': ['checkbox']
+                        });
+
+                        // Lưu userId vào data của modal để sử dụng khi lưu
+                        $('#permissionModal').data('user-id', userId).modal('show');
+
+                    } catch (error) {
+                        console.error('Lỗi khi mở modal quản lý quyền:', error);
+                        alert('Không thể mở modal quản lý quyền.');
                     }
                 }
-                alert('Lỗi: ' + errorMessages.join('\n'));
-            } else {
-                alert('Không thể cập nhật quyền');
-            }
-        }
-    });
-});
 
+                // Xử lý sự kiện lưu quyền cho người dùng
+                $('.save-permissions').on('click', async function () {
+                    try {
+                        const userId = $('#permissionModal').data('user-id');
+                        const selectedNodes = $('#permissionTree').jstree('get_selected', true);
+
+                        // Tạo cấu trúc dữ liệu để lưu
+                        const rolesToAssign = [];
+                        const permissionsToAssign = {};
+
+                        selectedNodes.forEach(node => {
+                            if (node.id.startsWith('role-') && node.parent === '#') {
+                                const roleId = parseInt(node.id.split('-')[1]);
+                                rolesToAssign.push(roleId);
+                                if (!permissionsToAssign[roleId]) {
+                                    permissionsToAssign[roleId] = [];
+                                }
+                            } else if (node.id.startsWith('perm-')) {
+                                const parts = node.id.split('-');
+                                const roleId = parseInt(parts[1]);
+                                const maChucNang = parseInt(parts[2]);
+                                const maHanhDong = parseInt(parts[3]);
+
+                                if (!permissionsToAssign[roleId]) {
+                                    permissionsToAssign[roleId] = [];
+                                }
+
+                                permissionsToAssign[roleId].push({
+                                    MaChucNang: maChucNang,
+                                    MaHanhDong: maHanhDong,
+                                    MaDonVi: 1 // Giả sử bạn có trường MaDonVi, thay đổi nếu cần
+                                });
+                            }
+                        });
+
+                        // Gửi các chức vụ được chọn lên API (sử dụng POST)
+                        await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { RoleIds: rolesToAssign });
+
+                        // Gửi các quyền được chọn cho từng chức vụ lên API (sử dụng POST)
+                        const permissionPromises = Object.keys(permissionsToAssign).map(roleId => {
+                            return apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/permissions`, 'POST', { Permissions: permissionsToAssign[roleId] });
+                        });
+
+                        await Promise.all(permissionPromises);
+
+                        alert('Cập nhật quyền thành công');
+                        $('#permissionModal').modal('hide');
+                        loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
+
+                    } catch (error) {
+                        console.error('Lỗi khi cập nhật quyền:', error);
+                        if (error.message) {
+                            alert('Lỗi: ' + error.message);
+                        } else {
+                            alert('Không thể cập nhật quyền.');
+                        }
+                    }
+                });
+
+                // Xử lý sự kiện mở modal quản lý chức vụ
+                $('#manageRolesButton').on('click', async function () {
+                    openManageRolesModal();
+                });
+
+                // Hàm mở modal quản lý chức vụ và quyền
+                async function openManageRolesModal() {
+                    try {
+                        // Tải tất cả các chức vụ, chức năng và hành động
+                        const [allRoles, allFunctions, allActions] = await Promise.all([
+                            getAllRoles(),
+                            getAllFunctions(),
+                            getAllActions()
+                        ]);
+
+                        // Lấy tất cả các quyền của mỗi chức vụ
+                        const rolePermissionsPromises = allRoles.map(role =>
+                            apiCall(`https://localhost:7248/api/ChucVu/${role.maChucVu}/permissions`)
+                                .then(perms => ({ roleId: role.maChucVu, permissions: perms }))
+                                .catch(err => {
+                                    console.error(`Lỗi khi lấy quyền của chức vụ ${role.maChucVu}:`, err);
+                                    return { roleId: role.maChucVu, permissions: [] };
+                                })
+                        );
+
+                        const rolesWithPermissions = await Promise.all(rolePermissionsPromises);
+
+                        // Tạo một bản đồ để dễ dàng tra cứu quyền theo chức vụ và chức năng
+                        const rolePermissionMap = {};
+                        rolesWithPermissions.forEach(rolePerm => {
+                            rolePermissionMap[rolePerm.roleId] = rolePerm.permissions;
+                        });
+
+                        // Xây dựng dữ liệu cho jsTree
+                        const treeData = allRoles.map(role => {
+                            const rolePermissions = rolePermissionMap[role.maChucVu] || [];
+
+                            const roleNode = {
+                                id: `role-${role.maChucVu}`,
+                                text: role.tenChucVu,
+                                state: {
+                                    selected: false // Mặc định không chọn
+                                },
+                                children: allFunctions.map(func => {
+                                    // Kiểm tra nếu chức vụ có bất kỳ quyền nào liên quan đến chức năng này
+                                    const funcPermissions = rolePermissions.filter(p => p.maChucNang === func.maChucNang);
+                                    const hasFuncPermission = funcPermissions.length > 0;
+
+                                    const funcNode = {
+                                        id: `func-${role.maChucVu}-${func.maChucNang}`,
+                                        text: func.tenChucNang,
+                                        state: {
+                                            selected: hasFuncPermission
+                                        },
+                                        children: allActions.map(action => {
+                                            const hasPermission = rolePermissions.some(p => p.maChucNang === func.maChucNang && p.maHanhDong === action.maHanhDong);
+                                            return {
+                                                id: `perm-${role.maChucVu}-${func.maChucNang}-${action.maHanhDong}`,
+                                                text: action.tenHanhDong,
+                                                state: {
+                                                    selected: hasPermission
+                                                }
+                                            };
+                                        })
+                                    };
+
+                                    return funcNode;
+                                })
+                            };
+
+                            return roleNode;
+                        });
+
+                        // Khởi tạo jsTree cho modal quản lý chức vụ
+                        $('#manageRolesTree').jstree('destroy');
+                        $('#manageRolesTree').jstree({
+                            'core': {
+                                'data': treeData
+                            },
+                            'checkbox': {
+                                'keep_selected_style': false,
+                                'three_state': false,
+                                'cascade': 'none' // Không cascade chọn
+                            },
+                            'plugins': ['checkbox']
+                        });
+
+                        // Mở modal quản lý chức vụ
+                        $('#manageRolesModal').modal('show');
+
+                    } catch (error) {
+                        console.error('Lỗi khi mở modal quản lý chức vụ:', error);
+                        alert('Không thể mở modal quản lý chức vụ.');
+                    }
+                }
+
+                // Xử lý sự kiện lưu chức vụ và quyền
+                $('.save-roles-permissions').on('click', async function () {
+                    try {
+                        const selectedNodes = $('#manageRolesTree').jstree('get_selected', true);
+
+                        // Tạo cấu trúc dữ liệu để lưu
+                        const permissionsByRole = {};
+
+                        selectedNodes.forEach(node => {
+                            if (node.id.startsWith('perm-')) {
+                                const parts = node.id.split('-');
+                                const roleId = parseInt(parts[1]);
+                                const maChucNang = parseInt(parts[2]);
+                                const maHanhDong = parseInt(parts[3]);
+
+                                if (!permissionsByRole[roleId]) {
+                                    permissionsByRole[roleId] = [];
+                                }
+
+                                permissionsByRole[roleId].push({
+                                    MaChucNang: maChucNang,
+                                    MaHanhDong: maHanhDong,
+                                    MaDonVi: 1 // Giả sử bạn có trường MaDonVi, thay đổi nếu cần
+                                });
+                            }
+                        });
+
+                        // Gửi các quyền được chọn cho từng chức vụ lên API (sử dụng POST)
+                        const permissionPromises = Object.keys(permissionsByRole).map(roleId => {
+                            return apiCall(`https://localhost:7248/api/ChucVu/${roleId}/permissions`, 'POST', { Permissions: permissionsByRole[roleId] });
+                        });
+
+                        await Promise.all(permissionPromises);
+
+                        alert('Cập nhật chức vụ và quyền thành công');
+                        $('#manageRolesModal').modal('hide');
+                        loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
+                    } catch (error) {
+                        console.error('Lỗi khi cập nhật chức vụ và quyền:', error);
+                        if (error.message) {
+                            alert('Lỗi: ' + error.message);
+                        } else {
+                            alert('Không thể cập nhật chức vụ và quyền.');
+                        }
+                    }
+                });
+
+                // Tải danh sách người dùng khi trang được tải
+                loadUsers();
+
+            } catch (generalError) {
+                console.error('Lỗi chung:', generalError);
+                alert('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+            }
+        })();
     });
 </script>
