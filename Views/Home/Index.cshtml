@@ -1,0 +1,196 @@
+﻿@{
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+<div class="shoes-grid">
+    <!-- Banner Slider -->
+    <div class="wrap-in">
+        <div class="wmuSlider example1 slide-grid" style="overflow: hidden; height: 554px;">
+            <a href="#">
+                <div class="wmuSliderWrapper">
+                    <article style="position: relative; width: 100%; opacity: 1;">
+                        <div class="banner-matter">
+                            <div class="col-md-5 banner-bag">
+                                <img class="img-responsive" src="~/BigShopee/images/Anh2.2.png" alt="Banner">
+                            </div>
+                            <div class="col-md-7 banner-off">
+                                <h2>GIẢM TỚI 50%</h2>
+                                <label>CHO MỌI ĐƠN HÀNG <b>NGÀY KHAI TRƯƠNG</b></label>
+                                <p>Chương trình khuyến mãi chỉ áp dụng cho một số mặt hàng nhất định.</p>
+                                <span class="on-get">MUA NGAY</span>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                    </article>
+                </div>
+            </a>
+            <ul class="wmuSliderPagination">
+                <li><a href="#" class="wmuActive">0</a></li>
+                <li><a href="#">1</a></li>
+                <li><a href="#">2</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Products Section -->
+    <div class="products">
+        <h5 class="latest-product">SẢN PHẨM BÁN CHẠY</h5>
+        <a class="view-all" href="/Home/AllProduct2">Tất cả sản phẩm<span> </span></a>
+    </div>
+
+    <div class="product-left" id="productContainer">
+        <!-- Sản phẩm sẽ được tải từ API và hiển thị tại đây -->
+    </div>
+    <div class="clearfix"></div>
+
+    <!-- Pagination Container -->
+    <nav aria-label="Page navigation example" id="pagination">
+        <ul class="pagination justify-content-end"></ul>
+    </nav>
+</div>
+
+
+<script src="~/new/jquery-3.6.0.min.js"></script>
+<script src="~/new/sweetalert2@10.js"></script>
+<script>
+    // Định dạng tiền tệ
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+    }
+
+    // Lấy danh sách sản phẩm từ API và hiển thị
+    function loadProducts(pageIndex = 1, pageSize = 6) {
+        $.ajax({
+            url: `https://localhost:7248/api/HomeControllerAPI/AllProduct?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+            type: "GET",
+            dataType: "json",
+            success: function (response) {
+                var totalProducts = response.totalCount;
+                var totalPages = Math.ceil(totalProducts / pageSize);
+
+                $("#productContainer").empty();
+                $("#pagination ul").empty();
+
+                // Hiển thị sản phẩm
+                response.sanpham.forEach(function (product) {
+                    var productHtml = `
+                                <div class="col-md-4 chain-grid" style="min-height: 406.29px;">
+                                    <a href="/Home/ProductDetail/${product.maSp}">
+                                        <img class="img-responsive chain" src="${product.anh1}" alt=" ">
+                                    </a>
+                                    <span class="star"> </span>
+                                    <div class="grid-chain-bottom">
+                                        <h6><a href="/Home/ProductDetail/${product.maSp}">${product.tenSp}</a></h6>
+                                        <div class="star-price">
+                                            <div class="dolor-grid">
+                                                <span class="actual">${formatCurrency(product.giaTien)}</span>
+                                                <br /><span>Đã bán ${product.soLuongDaBan}</span>
+                                            </div>
+                                            <a class="now-get get-cart" onclick="addItem(${product.maSp}, '${product.tenSp}', '${product.anh1}', ${product.giaTien})">THÊM VÀO GIỎ</a>
+                                            <div class="clearfix"> </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                    $("#productContainer").append(productHtml);
+                });
+
+                // Hiển thị phân trang
+                for (var i = 1; i <= totalPages; i++) {
+                    var pageHtml = `
+                                <li class="page-item ${i === pageIndex ? 'active' : ''}">
+                                    <a class="page-link" onclick="loadProducts(${i}, ${pageSize})">${i}</a>
+                                </li>
+                            `;
+                    $("#pagination ul").append(pageHtml);
+                }
+            }
+        });
+    }
+
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+        // Chỉ hiển thị số lượng nếu khác 0
+        $('#dot-cart').html(totalCount > 0 ? totalCount : '');
+    }
+
+    // Thêm sản phẩm vào giỏ hàng trong localStorage
+    function addItem(productId, productName, productImage, productPrice) {
+        // Tạo đối tượng dữ liệu để gửi trong body
+        var requestData = {
+            ProductId: productId,
+            CheckOnly: true
+        };
+
+        // Gọi API để kiểm tra trạng thái hàng trước khi thêm
+        $.ajax({
+            url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON
+            data: JSON.stringify(requestData), // Chuyển đổi đối tượng thành chuỗi JSON
+            success: function (response) {
+                if (response.status === true) {
+                    // Nếu sản phẩm còn trong kho, thêm vào localStorage
+                    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                    let existingItem = cart.find(item => item.productId === productId);
+
+                    if (existingItem) {
+                        existingItem.quantity += 1; // Tăng số lượng nếu sản phẩm đã tồn tại
+                    } else {
+                        // Thêm sản phẩm mới vào giỏ hàng
+                        cart.push({
+                            productId: productId,
+                            productName: productName,
+                            productImage: productImage,
+                            productPrice: productPrice,
+                            quantity: 1
+                        });
+                    }
+                    console.log("Updated Cart:", cart);
+                    // Lưu giỏ hàng trở lại vào localStorage
+                    localStorage.setItem('cart', JSON.stringify(cart));
+
+                    // Cập nhật hiển thị số lượng giỏ hàng
+                    updateCartCount();
+
+                    // Thông báo thành công
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'success',
+                        title: 'Thêm sản phẩm vào giỏ hàng thành công',
+                        showConfirmButton: false,
+                        timer: 700
+                    });
+                } else {
+                    // Hiển thị thông báo lỗi nếu sản phẩm hết hàng
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'error',
+                        title: response.message || 'Sản phẩm hiện không còn trong kho.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'error',
+                    title: 'Lỗi khi kiểm tra trạng thái sản phẩm',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+        });
+    }
+
+    // Khi tài liệu đã sẵn sàng, tải sản phẩm và cập nhật số lượng giỏ hàng
+    $(document).ready(function () {
+        loadProducts();
+        updateCartCount();
+    });
+
+</script>

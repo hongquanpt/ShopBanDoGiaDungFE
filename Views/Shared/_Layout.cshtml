@@ -1,0 +1,312 @@
+﻿@using Microsoft.AspNetCore.Http;
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Online Shop</title>
+
+    <!-- CSS và JS -->
+
+    <link href="~/BigShopee/css/bootstrap.css" rel="stylesheet" type="text/css" media="all" />
+    <link rel="stylesheet" href="~/BigShopee/css/etalage.css" type="text/css" media="all" />
+    <link href="~/BigShopee/css/style.css" rel="stylesheet" type="text/css" media="all" />
+
+
+    <!-- Meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <!-- Thêm các thư viện cần thiết -->
+
+
+    <script src="~/new/sweetalert2@10.js"></script>
+
+    <script src="~/new/jwt-decode.min.js"></script>
+    <script src="~/new/jquery-3.6.0.min.js"></script>
+   @*  <script src="~/BigShopee/bootstrap.min.js"></script> *@
+</head>
+<body>
+    <!--header-->
+    <div class="header">
+        <div class="top-header">
+            <div class="container">
+                <div class="top-header-left">
+                    <ul class="support">
+                        <li><a href="#"><label> </label></a></li>
+                        <li><a href="#">Hỗ trợ<span class="live"> 24/24</span></a></li>
+                    </ul>
+                    <ul class="support">
+                        <li class="van"><a href="#"><label> </label></a></li>
+                        <li><a href="#">Miễn phí vận chuyển<span class="live"> trong vòng 5 km</span></a></li>
+                    </ul>
+                    <div class="clearfix"> </div>
+                </div>
+                <div class="clearfix"> </div>
+            </div>
+        </div>
+        <div class="bottom-header">
+            <div class="container">
+                <div class="header-bottom-left">
+                    <div class="logo">
+                        <a href="/Home/Index"><img src="~/BigShopee/images/logo.png" alt="Logo" /></a>
+                    </div>
+                    <div class="search" style="display: flex; justify-content: center; align-items: center;">
+                        <input id="search-name" type="text" name="search" placeholder="Tìm kiếm..." />
+                        <button onclick="handleSearch()" type="button" class="btn btn-primary">TÌM KIẾM</button>
+                    </div>
+                    <script>
+                        function handleSearch() {
+                            var search = $("#search-name").val().trim();
+                            if (search) {
+                                window.location.href = '/Home/AllProduct2?PageIndex=1&PageSize=6&search=' + encodeURIComponent(search);
+                            } else {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Cảnh báo',
+                                    text: 'Vui lòng nhập từ khóa tìm kiếm.'
+                                });
+                            }
+                        }
+                    </script>
+                    <div class="clearfix"> </div>
+                </div>
+
+                <div class="header-bottom-right">
+                    <!-- Phần Tài Khoản -->
+                    <div class="account dropdown">
+                        <!-- Kiểm tra người dùng đã đăng nhập hay chưa bằng JavaScript -->
+                        <a href="#" id="userAccount" class="dropdown-toggle" data-toggle="dropdown" style="cursor: pointer;">
+                            <span> </span>TÀI KHOẢN
+                        </a>
+                        <ul class="dropdown-menu" id="userMenu" style="display: none;">
+                            <li>
+                                <a href="/Home/Profile">
+                                    <i style="color:#F97E76;" class="fas fa-user"></i>
+                                    Thông tin tài khoản
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/Home/MyOrder?PageIndex=1&PageSize=10">
+                                    <i style="color:#F97E76;" class="fas fa-receipt"></i>
+                                    Lịch sử mua hàng
+                                </a>
+                            </li>
+                          @*   <li id="adminLink" style="display: none;">
+                                <a href="/Admin/Index">
+                                    <i style="color:#F97E76;" class="fas fa-cog"></i>
+                                    Về Trang Admin
+                                </a>
+                            </li> *@
+                        </ul>
+                    </div>
+                    <div class="cart" style="position: relative;">
+                        <a href="/Cart/Index" id="cartLink"><span> </span>GIỎ HÀNG</a>
+                        <div id="dot-cart" style="color: red; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; position: absolute; top: -5px; right: -10px;">
+                            <!-- Số lượng sản phẩm trong giỏ hàng sẽ được cập nhật bằng JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Liên kết Đăng nhập và Đăng ký -->
+                    <div id="authLinks">
+                        <a href="/Access/Login">ĐĂNG NHẬP</a>
+                        <span>|</span>
+                        <a href="/Access/Register">ĐĂNG KÝ</a>
+                    </div>
+
+                    <!-- Liên kết Đăng xuất và Về Trang Admin (nếu có) -->
+                    <div id="logoutDiv" style="display: none;">
+                        <div style="margin-bottom: 5px;">
+                            <button style="border:none; background-color:transparent; font-size:16px;" id="logoutBtn">
+                                ĐĂNG XUẤT
+                            </button>
+                            <i style="font-size:18px;color:#F97E76; cursor: pointer;" class="fas fa-sign-out-alt"></i>
+                        </div>
+                        <div>
+                            <a href="/Admin/Index" id="adminLinkFooter" style="display: none; font-size:16px; margin-left: 155px;">
+                                VỀ TRANG ADMIN
+                            </a>
+                            <i style="font-size:18px;color:#F97E76; cursor: pointer;" class="fas fa-sign-out-alt"></i>
+                        </div>
+                    </div>
+
+                    <div class="clearfix"> </div>
+                </div>
+                <div class="clearfix"> </div>
+            </div>
+        </div>
+    </div>
+    <!---->
+    <div class="container">
+        @RenderBody()
+        <div class="sub-cate">
+            @*  @await Component.InvokeAsync("DanhMuc") *@
+            @*  @await Component.InvokeAsync("Hang") *@
+            @await Component.InvokeAsync("TimKiemKhac")
+        </div>
+        <div class="clearfix"> </div>
+    </div>
+    <!---->
+    <div class="footer">
+        <div class="footer-top">
+            <div class="container">
+                <div class="latter">
+                    <h6>NEWS-LETTER</h6>
+                    <div class="sub-left-right">
+                        <form>
+                            <input type="email" class="form-control" placeholder="Enter email here" required />
+                            <button type="submit" class="btn btn-primary">SUBSCRIBE</button>
+                        </form>
+                    </div>
+                    <div class="clearfix"> </div>
+                </div>
+                <div class="latter-right">
+                    <p>FOLLOW US</p>
+                    <ul class="face-in-to">
+                        <li><a href="#"><span> </span></a></li>
+                        <li><a href="#"><span class="facebook-in"> </span></a></li>
+                    </ul>
+
+                    <div class="clearfix"> </div>
+                </div>
+                <div class="clearfix"> </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+
+            <div class="container" style="display:flex; flex-direction: row;">
+                <div style="width: 25%;">
+                    <h3>BIG SHOPPE</h3>
+                    <ul>
+                        <li>Địa chỉ:</li>
+                        <li>236 Hoàng Quốc Việt, Cổ Nhuế 1,</li>
+                        <li>Bắc Từ Liêm, Hà Nội</li>
+                        <li>Facebook: <a href="https://www.facebook.com/hongquanlienxo2002">Nguyễn Hồng Quân</a></li>
+                        <li>Email: nguyenhongquan122002@gmail.com</li>
+                        <li class="phone">SĐT: 0981293743</li>
+                    </ul>
+                </div>
+                <div style="width:75%;">
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.649793342786!2d105.78431471488373!3d21.04669418598872!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab2d88bb4195%3A0x3006e474cce20274!2zSOG7jWMgdmnhu4duIEvhu7kgdGh14bqtdCBRdcOibiBz4bux!5e0!3m2!1svi!2s!4v1670420855037!5m2!1svi!2s"
+                            height="450" style="border:0;width:100%" allowfullscreen="" loading="lazy"></iframe>
+                </div>
+
+                @* <div class="clearfix"> </div>*@
+            </div>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script>
+        $(document).ready(function () {
+            // Hàm để kiểm tra và hiển thị phân quyền dựa trên localStorage
+            // Hàm để kiểm tra và hiển thị phân quyền dựa trên localStorage
+            function checkPermissions() {
+                var token = localStorage.getItem('token');
+                if (!token) {
+                    return;
+                }           
+                var decodedToken = jwt_decode(token);
+                console.log(decodedToken);
+                var permissions = decodedToken.permissions || [];
+                if (permissions.includes('QuanLyTaiKhoan:Xem')) {
+                    $('#adminLink').show();
+                    $('#adminLinkFooter').show();
+                } else {
+                    $('#adminLink').hide();
+                    $('#adminLinkFooter').hide();
+                }
+                             
+            }
+
+
+            // Hàm để cập nhật giao diện người dùng dựa trên token và permissions
+            function updateUIBasedOnToken() {
+                var token = localStorage.getItem('token');
+                if (token) {
+                    try {
+                        var decodedToken = jwt_decode(token);
+                      
+                        var name = decodedToken.email || decodedToken.name || 'User';
+                        $('#userAccount').html('<span> </span>Chào, ' + name);
+
+                        // Hiển thị dropdown khi nhấp vào tên người dùng
+                        $('#userAccount').attr('href', '#');
+                        $('#userAccount').addClass('dropdown-toggle');
+                        $('#userAccount').attr('data-toggle', 'dropdown');
+
+                        // Hiển thị nút Đăng xuất và ẩn các liên kết Đăng nhập/Đăng ký
+                        $('#authLinks').hide();
+                        $('#logoutDiv').show();
+
+                        // Lấy danh sách quyền từ localStorage và kiểm tra phân quyền
+                        checkPermissions();
+
+                        // Lấy số lượng sản phẩm trong giỏ hàng từ localStorage
+                        var cartCount = localStorage.getItem('cartCount') || 0;
+                        $('#dot-cart').text(cartCount);
+
+                        // Thiết lập ajaxSetup để gửi token tự động với các yêu cầu AJAX
+                        $.ajaxSetup({
+                            beforeSend: function (xhr) {
+                                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                            }
+                        });
+
+                    } catch (err) {
+                        console.error('Invalid token:', err);
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('permissions');
+                        localStorage.removeItem('cartCount');
+                        window.location.href = '/Access/Login';
+                    }
+                } else {
+                    // Người dùng chưa đăng nhập
+                    $('#authLinks').show();
+                    $('#logoutDiv').hide();
+                    $('#userAccount').attr('href', '/Access/Login');
+                    $('#userAccount').html('<span> </span>TÀI KHOẢN');
+
+                    // Giỏ hàng khi chưa đăng nhập
+                    $('#cartLink').attr('href', '/Access/Login');
+                }
+            }
+
+            // Kiểm tra token và cập nhật UI khi tải trang
+            updateUIBasedOnToken();
+
+            // Xử lý đăng xuất
+            $('#logoutBtn').on('click', function () {
+                Swal.fire({
+                    title: 'Bạn có chắc chắn muốn đăng xuất?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Đăng xuất',
+                    cancelButtonText: 'Hủy',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('permissions');
+                        localStorage.removeItem('cartCount');
+                        window.location.href = '/Access/Login';
+                    }
+                });
+            });
+
+            // Xử lý hiển thị/ẩn menu dropdown khi nhấp vào tên người dùng
+            $('#userAccount').on('click', function (e) {
+                e.preventDefault(); // Ngăn chặn hành vi mặc định của liên kết
+                $('#userMenu').toggle();
+            });
+
+            // Khi nhấp vào bất kỳ đâu ngoài #userAccount và #userMenu, ẩn #userMenu
+            $(document).on('click', function (e) {
+                var target = $(e.target);
+                if (!target.closest('#userAccount').length && !target.closest('#userMenu').length) {
+                    $('#userMenu').hide();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

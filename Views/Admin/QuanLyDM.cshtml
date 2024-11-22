@@ -1,0 +1,199 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="wrapper">
+    <div class="content-wrapper">
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <label class="card-title">Quản lý thông tin danh mục sản phẩm</label>
+                            </div>
+                            <div class="card-body">
+                                <table id="categoryTable" class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã danh mục</th>
+                                            <th>Tên danh mục</th>
+                                            <th>Sửa danh mục</th>
+                                            <th>Xóa danh mục</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dữ liệu sẽ được thêm vào bằng JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="addCategoryBtn" class="btn btn-primary">Thêm danh mục mới</button>
+                    <!-- Modal thêm danh mục -->
+                    <div id="addCategoryModal" style="display: none;">
+                        <div class="modal-content">
+                            <h3>Thêm danh mục mới</h3>
+                            <input type="text" id="categoryName" placeholder="Nhập tên danh mục mới" />
+                            <button id="confirmAddCategory" class="btn btn-success">Thêm danh mục</button>
+                            <button id="cancelAddCategory" class="btn btn-secondary">Hủy bỏ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Bao gồm thư viện jQuery và jwt-decode -->
+<script src="~/new/jquery-3.6.0.min.js"></script>
+<script src="~/new/jwt-decode.min.js"></script>
+
+
+<script>
+    $(document).ready(function () {
+        var token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token và kiểm tra quyền truy cập
+        var decodedToken = jwt_decode(token);
+        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+        var canEdit = Array.isArray(roles) ? roles.includes('admin') || roles.includes('category_manager') : roles === 'admin' || roles === 'category_manager';
+
+        if (!canEdit) {
+            $('#addCategoryBtn').hide();
+        }
+
+        // Thiết lập token cho tất cả các yêu cầu AJAX
+        $.ajaxSetup({
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            }
+        });
+
+        // Hàm tải danh sách danh mục
+        function loadCategories(page = 1) {
+            $.ajax({
+                url: `https://localhost:7248/api/Category/danhmucs?page=${page}&pageSize=10&_=${new Date().getTime()}`,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var dataTable = $('#categoryTable').DataTable();
+                    dataTable.clear(); // Xóa dữ liệu hiện có trong bảng
+
+                    // Duyệt qua các danh mục và thêm vào bảng
+                    data.data.forEach(function (category) {
+                        var row = [
+                            category.maDanhMuc,
+                            category.tenDanhMuc,
+                            canEdit ? '<button class="btn btn-success edit-category" data-category-id="' + category.maDanhMuc + '">Chỉnh sửa</button>' : '',
+                            canEdit ? '<button class="btn btn-danger delete-category" data-category-id="' + category.maDanhMuc + '">Xóa</button>' : ''
+                        ];
+                        dataTable.row.add(row);
+                    });
+
+                    // Vẽ lại bảng
+                    dataTable.draw();
+                },
+                error: function (error) {
+                    console.error('Lỗi khi lấy danh sách danh mục:', error);
+                }
+            });
+        }
+
+        // Khởi tạo DataTable lần đầu
+        $('#categoryTable').DataTable({
+            "paging": true,
+            "ordering": true,
+            "info": true,
+            "searching": true,
+            "language": {
+                "paginate": { "next": "Trang sau", "previous": "Trang trước" },
+                "info": "Hiển thị từ _START_ đến _END_ của _TOTAL_ danh mục sản phẩm",
+                "search": "Tìm kiếm:"
+            }
+        });
+
+        // Tải danh sách danh mục khi trang được tải
+        loadCategories();
+
+        if (canEdit) {
+            // Hiển thị modal thêm danh mục
+            $('#addCategoryBtn').on('click', function () {
+                $('#addCategoryModal').show();
+            });
+
+            // Xử lý thêm danh mục
+            $('#confirmAddCategory').on('click', function () {
+                var categoryName = $('#categoryName').val().trim();
+                if (categoryName === '') {
+                    alert('Vui lòng nhập tên danh mục.');
+                    return;
+                }
+
+                $.ajax({
+                    url: 'https://localhost:7248/api/Category/danhmucs',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({ tenDanhMuc: categoryName }),
+                    success: function () {
+                        alert('Thêm danh mục thành công.');
+                        $('#addCategoryModal').hide();
+                        $('#categoryName').val('');
+                        loadCategories();
+                    },
+                    error: function (error) {
+                        console.error('Lỗi khi thêm danh mục:', error);
+                        alert('Không thể thêm danh mục.');
+                    }
+                });
+            });
+
+            // Hủy thêm danh mục
+            $('#cancelAddCategory').on('click', function () {
+                $('#addCategoryModal').hide();
+                $('#categoryName').val('');
+            });
+
+            // Xử lý xóa danh mục
+            $('#categoryTable').on('click', '.delete-category', function () {
+                var categoryId = $(this).data('category-id');
+                if (confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
+                    $.ajax({
+                        url: 'https://localhost:7248/api/Category/danhmucs/' + categoryId,
+                        method: 'DELETE',
+                        success: function () {
+                            alert('Xóa danh mục thành công.');
+                            loadCategories();
+                        },
+                        error: function (error) {
+                            console.error('Lỗi khi xóa danh mục:', error);
+                            alert('Không thể xóa danh mục.');
+                        }
+                    });
+                }
+            });
+
+            // Xử lý sửa danh mục
+            $('#categoryTable').on('click', '.edit-category', function () {
+                var categoryId = $(this).data('category-id');
+                window.location.href = '/Admin/SuaDM/' + categoryId;
+            });
+        }
+    });
+</script>
+
+<!-- Bao gồm các thư viện và plugin DataTables -->
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="~/Admin/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="~/Admin/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+<script src="~/Admin/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="~/Admin/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="~/Admin/dist/js/adminlte.min.js"></script>

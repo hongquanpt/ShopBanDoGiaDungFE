@@ -1,0 +1,410 @@
+﻿@{
+    ViewBag.Title = "MyOrder";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+
+
+<div class="single_top">
+    <h2 style="margin-top: -15px">ĐƠN HÀNG CỦA TÔI</h2>
+
+    <input type="text" id="value-type-menu" hidden value="tatca" />
+    <div class="single_grid">
+        <div id="cartContent">
+            <ul class="nav nav-tabs">
+                <li class="tab-item" id="tab-tatca"><a href="javascript:void(0)" onclick="ChangeTypeMenu(1, 10, 'tatca')">Tất cả đơn hàng</a></li>
+                <li class="tab-item" id="tab-choxacnhan"><a href="javascript:void(0)" onclick="ChangeTypeMenu(1, 10, 'choxacnhan')">Chờ xác nhận</a></li>
+                <li class="tab-item" id="tab-dangvanchuyen"><a href="javascript:void(0)" onclick="ChangeTypeMenu(1, 10, 'dangvanchuyen')">Đang vận chuyển</a></li>
+                <li class="tab-item" id="tab-dahoanthanh"><a href="javascript:void(0)" onclick="ChangeTypeMenu(1, 10, 'dahoanthanh')">Đã hoàn thành</a></li>
+                <li class="tab-item" id="tab-dahuy"><a href="javascript:void(0)" onclick="ChangeTypeMenu(1, 10, 'dahuy')">Đã hủy</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <div id="home" class="tab-pane fade in active">
+                    <table class="table table-hover" id="showtable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Mã đơn hàng</th>
+                                <th>Người nhận</th>
+                                <th>Địa chỉ giao hàng</th>
+                                <th>Ngày mua</th>
+                                <th>Tổng tiền</th>
+                                <th>Tình trạng</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderTableBody">
+                            <!-- Nội dung sẽ được thêm vào bằng JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Phân trang -->
+            <nav style="float: right; margin-right: 29px;" aria-label="Page navigation example">
+                <ul class="pagination justify-content-end" id="paginationControls">
+                    <!-- Điều khiển phân trang sẽ được thêm vào bằng JavaScript -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chi tiết đơn hàng -->
+<div class="modal fade"
+     id="orderDetailModal"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="orderDetailModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <!-- Nội dung sẽ được thêm vào bằng JavaScript -->
+        </div>
+    </div>
+</div>
+<script src="~/new/jquery-3.6.0.min.js"></script>
+<script src="~/new/sweetalert2@10.js"></script>
+<!-- Bao gồm jQuery -->
+
+
+<script>
+    $(document).ready(function () {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/Access/Login';
+        }
+
+        // Lấy trạng thái tab từ localStorage hoặc mặc định là 'tatca'
+        const currentTab = localStorage.getItem('selectedTab') || 'tatca';
+
+        // Cập nhật trạng thái tab "active" khi tải trang
+        $(`#tab-${currentTab}`).addClass('active');
+        $('#value-type-menu').val(currentTab);
+
+        // Load đơn hàng theo tab hiện tại khi tải trang
+        loadOrders(1, 10, currentTab);
+
+        // Hàm để thay đổi tab (loại đơn hàng)
+        window.ChangeTypeMenu = function (pageIndex, pageSize, typeMenu) {
+            // Cập nhật tab "active"
+            $('.nav-tabs .tab-item').removeClass('active');
+            $(`#tab-${typeMenu}`).addClass('active');
+
+            // Lưu lựa chọn tab vào localStorage
+            localStorage.setItem('selectedTab', typeMenu);
+
+            $('#value-type-menu').val(typeMenu);
+            loadOrders(pageIndex, pageSize, typeMenu);
+        };
+
+        // Hàm để tải danh sách đơn hàng
+        function loadOrders(pageIndex, pageSize, typeMenu) {
+            $.ajax({
+                url: `https://localhost:7248/api/HomeControllerAPI/MyOrder?typeMenu=${typeMenu}&PageIndex=${pageIndex}&PageSize=${pageSize}`,
+                type: 'GET',
+                dataType: 'json',
+                headers: { "Authorization": `Bearer ${token}` },
+                success: function (res) {
+                    // console.log(res);
+                    renderOrders(res.donhang); // Hiển thị đơn hàng
+                    const totalPages = Math.ceil(res.totalCount / pageSize);
+                    renderPagination(pageIndex, totalPages, pageSize, typeMenu); // Hiển thị điều hướng phân trang
+                },
+                error: function (error) {
+                    console.error("Lỗi khi tải đơn hàng:", error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi',
+                        text: 'Không thể tải đơn hàng. Vui lòng thử lại sau.'
+                    });
+                }
+            });
+        }
+
+        // Hàm để hiển thị danh sách đơn hàng trong bảng
+        function renderOrders(orders) {
+            let tbody = $('#orderTableBody');
+            tbody.empty(); // Xóa nội dung hiện tại
+
+            if (orders.length === 0) {
+                tbody.append('<tr><td colspan="7" class="text-center">Không có đơn hàng nào.</td></tr>');
+                return;
+            }
+
+            orders.forEach(order => {
+                console.log(order);
+                let statusText = getStatusText(order.tinhTrang);
+
+                // Tạo biến chứa các nút hành động
+                let actionButtons = `<button class="btn btn-success btn-sm" onclick="viewOrderDetail(${order.maDonHang})">Chi tiết</button>`;
+
+                if (order.tinhTrang === 1) { // Chờ xác nhận
+                    actionButtons += ` <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.maDonHang})">Hủy</button>`;
+                }
+                if (order.tinhTrang === 2) { // Đang vận chuyển
+                    actionButtons += ` <button class="btn btn-primary btn-sm" onclick="confirmReceived(${order.maDonHang})">Đã nhận hàng</button>`;
+                }
+
+                // Đảm bảo mỗi hàng có cùng số lượng cột
+                let row = `<tr>
+                            <td>${order.maDonHang}</td>
+                            <td>${order.vanchuyen.nguoiNhan || "N/A"}</td>
+                            <td>${order.vanchuyen.diaChi || "N/A"}</td>
+                            <td>${new Date(order.ngayDatHang).toLocaleDateString()}</td>
+                            <td>${formatCurrency(order.tongTien)}</td>
+                            <td>${statusText}</td>
+                            <td>${actionButtons}</td>
+                        </tr>`;
+                tbody.append(row);
+            });
+        }
+
+        // Hàm để chuyển đổi mã trạng thái đơn hàng từ tên
+        function getStatusCode(typeMenu) {
+            const statusCodes = {
+                "tatca": "tatca",
+                "choxacnhan": "choxacnhan",
+                "dangvanchuyen": "dangvanchuyen",
+                "dahoanthanh": "dahoanthanh",
+                "dahuy": "dahuy"
+            };
+            return statusCodes[typeMenu] || "tatca";
+        }
+
+        // Hàm để lấy tên trạng thái từ mã trạng thái
+        function getStatusText(tinhTrang) {
+            const statusTexts = {
+                0: "Chưa thanh toán",
+                1: "Chờ xác nhận",
+                2: "Đang vận chuyển",
+                3: "Đã hoàn thành",
+                4: "Đã hủy"
+            };
+            return statusTexts[tinhTrang] || "Không xác định";
+        }
+
+        // Hàm để định dạng tiền tệ
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        }
+
+        // Hàm để hiển thị điều hướng phân trang
+        function renderPagination(currentPage, totalPages, pageSize, typeMenu) {
+            let pagination = $('#paginationControls');
+            pagination.empty();
+
+            // Hiển thị nút Previous
+            if (currentPage > 1) {
+                pagination.append(`
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" aria-label="Previous" onclick="loadOrders(${currentPage - 1}, ${pageSize}, '${typeMenu}')">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    `);
+            } else {
+                pagination.append(`
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&laquo;</span>
+                        </li>
+                    `);
+            }
+
+            // Hiển thị các trang
+            for (let i = 1; i <= totalPages; i++) {
+                if (totalPages > 5) { // Giới hạn số trang hiển thị
+                    if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                        pagination.append(`
+                                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                                    <a class="page-link" href="javascript:void(0)" onclick="loadOrders(${i}, ${pageSize}, '${typeMenu}')">${i}</a>
+                                </li>
+                            `);
+                    } else if (i === 2 && currentPage > 4) {
+                        pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    } else if (i === totalPages - 1 && currentPage < totalPages - 3) {
+                        pagination.append(`<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                } else { // Hiển thị tất cả các trang nếu tổng số trang <= 5
+                    pagination.append(`
+                            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                                <a class="page-link" href="javascript:void(0)" onclick="loadOrders(${i}, ${pageSize}, '${typeMenu}')">${i}</a>
+                            </li>
+                        `);
+                }
+            }
+
+            // Hiển thị nút Next
+            if (currentPage < totalPages) {
+                pagination.append(`
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" aria-label="Next" onclick="loadOrders(${currentPage + 1}, ${pageSize}, '${typeMenu}')">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    `);
+            } else {
+                pagination.append(`
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&raquo;</span>
+                        </li>
+                    `);
+            }
+        }
+
+        // Hàm để hủy đơn hàng
+        window.cancelOrder = function (orderId) {
+            Swal.fire({
+                title: 'Bạn có chắc chắn muốn hủy đơn hàng?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `https://localhost:7248/api/Order/orders/cancel/${orderId}`,
+                        type: 'POST',
+                        headers: { "Authorization": `Bearer ${token}` },
+                        success: function () {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công',
+                                text: 'Đơn hàng đã được hủy.',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            loadOrders(1, 10, $('#value-type-menu').val());
+                        },
+                        error: function (error) {
+                            console.error("Lỗi khi hủy đơn hàng:", error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Không thể hủy đơn hàng. Vui lòng thử lại sau.'
+                            });
+                        }
+                    });
+                }
+            });
+        };
+
+        // Hàm xác nhận nhận hàng
+        window.confirmReceived = function (orderId) {
+            Swal.fire({
+                title: 'Bạn đã nhận được hàng?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Xác nhận',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `https://localhost:7248/api/Order/orders/confirm/${orderId}`,
+                        type: 'POST',
+                        headers: { "Authorization": `Bearer ${token}` },
+                        success: function () {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công',
+                                text: 'Đã xác nhận nhận hàng.',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            loadOrders(1, 10, $('#value-type-menu').val());
+                        },
+                        error: function (error) {
+                            console.error("Lỗi khi xác nhận nhận hàng:", error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Không thể xác nhận nhận hàng. Vui lòng thử lại sau.'
+                            });
+                        }
+                    });
+                }
+            });
+        };
+
+        // Hàm để xem chi tiết đơn hàng
+        window.viewOrderDetail = function (orderId) {
+            $.ajax({
+                url: `https://localhost:7248/api/Order/orders/${orderId}/details`,
+                type: 'GET',
+                headers: { "Authorization": `Bearer ${token}` },
+                success: function (data) {
+                    showOrderDetailModal(data);
+                },
+                error: function (error) {
+                    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi',
+                        text: 'Không thể lấy chi tiết đơn hàng.'
+                    });
+                }
+            });
+        };
+
+        // Hàm để hiển thị chi tiết đơn hàng trong modal
+        function showOrderDetailModal(orderDetails) {
+            var modalContent = $('#orderDetailModal .modal-content');
+            modalContent.empty();
+
+            let content = `
+                    <div class="modal-header">
+                        <h4 class="modal-title">Chi tiết đơn hàng</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Mã SP</th>
+                                    <th>Tên SP</th>
+                                    <th>Ảnh SP</th>
+                                    <th>Số lượng mua</th>
+                                    <th>Đơn giá</th>
+                                    <th>Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+            if (Array.isArray(orderDetails) && orderDetails.length > 0) {
+                orderDetails.forEach(function (item) {
+                    content += `
+                            <tr>
+                                <td>${item.maSanPham}</td>
+                                <td><a href="/Product/Detail/${item.maSanPham}">${item.tenSP}</a></td>
+                                <td><img src="${item.anh}" class="img-fluid" alt="Ảnh sản phẩm" style="max-width: 100px;" /></td>
+                                <td>${item.soLuong}</td>
+                                <td>${formatCurrency(item.giaBan)}</td>
+                                <td>${formatCurrency(item.thanhTien)}</td>
+                            </tr>
+                        `;
+                });
+            } else {
+                content += `
+                        <tr>
+                            <td colspan="6" class="text-center">Không có chi tiết đơn hàng.</td>
+                        </tr>
+                    `;
+            }
+
+            content += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                    </div>
+                `;
+
+            modalContent.append(content);
+            $('#orderDetailModal').modal('show');
+        }
+    });
+</script>

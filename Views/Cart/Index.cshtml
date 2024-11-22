@@ -1,0 +1,305 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="single_top">
+    <div class="single_grid">
+        <div id="cartContent">
+            <!-- Nội dung giỏ hàng sẽ được thêm vào bằng JavaScript -->
+        </div>
+
+        <!-- Form nhập thông tin giao hàng -->
+        <div id="divCheckout" style="display:none;">
+            <div class="reservation_top">
+                <div class="contact_right">
+                    <h3>NHẬP THÔNG TIN GIAO HÀNG</h3>
+                    <div class="contact-form">
+                        <div class="register-top-grid">
+                            <div class="mation">
+                                <span>Họ tên <label style="color: red;font-size:14px;">*</label></span>
+                                <input type="text" style="color:black" id="Ten" name="ten">
+                                <p id="vld-name" style="right:24%;font-size:13px; color: red"></p>
+
+                                <span>Số điện thoại <label style="color: red;font-size:14px;">*</label></span>
+                                <input type="text" style="color:black" id="SDT" name="SDT">
+                                <p id="vld-sdt" style="right:24%;font-size:13px; color: red"></p>
+
+                                <span>Địa chỉ  <label style="color: red;font-size:14px;">*</label></span>
+                                <input type="text" style="color:black" id="DiaChi" name="DiaChi">
+                                <p id="vld-diachi" style="right:24%;font-size:13px; color: red"></p>
+
+                                <span>Chọn hình thức thanh toán <label style="color: red;font-size:14px;">*</label></span>
+                                <div class="form-group" style="width:90%">
+                                    <select class="form-control" id="httt" name="httt">
+                                        <option value="2">Thanh toán khi nhận hàng</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="ThanhToan()" class="btn btn-success">Xác nhận</button>
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/new/jquery-3.6.0.min.js"></script>
+<script src="~/new/sweetalert2@10.js"></script>
+<script>
+    $(document).ready(function () {
+        loadCart();
+        //localStorage.clear();
+
+        // Hàm hiển thị giỏ hàng từ localStorage
+        function loadCart() {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+             console.log(cart);
+            if (cart.length === 0) {
+                $('#cartContent').html('<span class="alert alert-danger">Chưa có sản phẩm nào trong giỏ hàng</span>');
+                return;
+            }
+
+            let content = '<table class="table table-hover">' +
+                '<thead>' +
+                '<tr>' +
+                '<td style="font-weight: 700;">Mã sản phẩm</td>' +
+                '<td style="font-weight: 700;">Tên sản phẩm</td>' +
+                '<td style="font-weight: 700;">Ảnh sản phẩm</td>' +
+                '<td style="font-weight: 700;">Số lượng</td>' +
+                '<td style="font-weight: 700;">Đơn giá</td>' +
+                '<td style="font-weight: 700;">Thành tiền</td>' +
+                '<td style="font-weight: 700;">Thao tác</td>' +
+                '</tr>' +
+                '</thead>' +
+                '<tbody>';
+
+            let tongTien = 0;
+
+            cart.forEach(function (item) {
+                let thanhTien = item.productPrice * item.quantity;
+                tongTien += thanhTien;
+
+                content += `<tr id="orderdetail_${item.productId}">
+                        <td>${item.productId}</td>
+                        <td><a href="/Home/ProductDetail/${item.productId}">${item.productName}</a></td>
+                        <td><img class="img-responsive" style="width: 100px;" src="${item.productImage}" /></td>
+                        <td>
+                            <input id="input_amount_${item.productId}" type="number" min="1" onchange="updateAmount(${item.productId})" value="${item.quantity}">
+                        </td>
+                        <td>${item.productPrice.toLocaleString('en-US')}</td>
+                        <td id="amount_${item.productId}">${thanhTien.toLocaleString('en-US')}</td>
+                        <td><a style="font-weight: 600;" href="#" onclick="deleteOrderDetail(${item.productId})">X</a></td>
+                    </tr>`;
+            });
+
+            content += '</tbody></table>';
+            content += `<div style="font-size: 20px; font-weight: 700;" class="pull-right">
+                    Tổng tiền: <span id="lblTotalOrder">${tongTien.toLocaleString('en-US')}</span> VND
+                </div>`;
+            content += `<div>
+                    <button id="btnContinue" style="background-color: #007bff; border-color: #007bff;" class="btn btn-primary">Tiếp tục mua hàng</button>
+                    <button onclick="deleteCart()" class="btn btn-danger">Xoá giỏ hàng</button>
+                    <button class="btn btn-success" id="btnCheckout">Thanh toán</button>
+                </div>`;
+
+            $('#cartContent').html(content);
+        }
+
+        // Hàm cập nhật số lượng sản phẩm trong giỏ hàng
+        window.updateAmount = function (productId) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let item = cart.find(item => item.productId === productId);
+            let newQuantity = parseInt($('#input_amount_' + productId).val());
+
+            if (newQuantity <= 0) {
+                deleteOrderDetail(productId);
+                return;
+            }
+
+            // Gọi API để kiểm tra tồn kho
+            $.ajax({
+                url: `https://localhost:7248/api/Product/UpdateCartItemQuantity?productId=${productId}&quantity=${newQuantity}`,
+                type: 'POST',
+                dataType: 'json',
+                success: function (response) {
+                    console.log(response);
+                    if (response.status === true) {
+                        // Cập nhật số lượng trong localStorage nếu thành công
+                        if (item) {
+                            item.quantity = newQuantity;
+                            localStorage.setItem('cart', JSON.stringify(cart));
+                            loadCart();
+                        }
+                    } else {
+                        // Nếu tồn kho không đủ, đặt lại số lượng và hiển thị thông báo
+                        Swal.fire({
+                            position: 'center',
+                            icon: 'error',
+                            title: response.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        $('#input_amount_' + productId).val(item.quantity); // Đặt lại số lượng cũ
+                    }
+                },
+                error: function () {
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'error',
+                        title: 'Số lượng sản phẩm trong kho không đủ',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    $('#input_amount_' + productId).val(item.quantity); // Đặt lại số lượng cũ
+                }
+            });
+        };
+
+        // Hàm xóa sản phẩm khỏi giỏ hàng
+        window.deleteOrderDetail = function (productId) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart = cart.filter(item => item.productId !== productId);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+        };
+
+        // Hàm xóa toàn bộ giỏ hàng
+        window.deleteCart = function () {
+            Swal.fire({
+                title: 'Bạn có chắc chắn muốn xóa giỏ hàng?',
+                showCancelButton: true,
+                confirmButtonText: 'Xóa',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem('cart');
+                    loadCart();
+                }
+            });
+        };
+
+        // Sự kiện tiếp tục mua hàng
+        $('#cartContent').on('click', '#btnContinue', function () {
+            window.location.href = '/Home/Index';
+        });
+    });
+
+
+        // Hiển thị form thanh toán
+        $('#cartContent').on('click', '#btnCheckout', function () {
+            $('#divCheckout').show();
+            $('html, body').animate({
+                scrollTop: $("#divCheckout").offset().top
+            }, 1000);
+        });
+
+    // Hàm xử lý thanh toán
+    window.ThanhToan = function () {
+        var ten = $('#Ten').val();
+        var sdt = $('#SDT').val();
+        var diaChi = $('#DiaChi').val();
+        var isValid = true;
+
+        // Kiểm tra nhập liệu
+        if (!ten) {
+            $('#vld-name').text('Vui lòng nhập họ và tên');
+            isValid = false;
+        } else {
+            $('#vld-name').text('');
+        }
+
+        if (!sdt) {
+            $('#vld-sdt').text('Vui lòng nhập số điện thoại');
+            isValid = false;
+        } else {
+            $('#vld-sdt').text('');
+        }
+
+        if (!diaChi) {
+            $('#vld-diachi').text('Vui lòng nhập địa chỉ');
+            isValid = false;
+        } else {
+            $('#vld-diachi').text('');
+        }
+
+        if (!isValid) {
+            Swal.fire({
+                position: 'center',
+                icon: 'error',
+                title: "Vui lòng điền đầy đủ thông tin",
+                showConfirmButton: false,
+                timer: 1500
+            });
+            return;
+        }
+
+        // Lấy giỏ hàng từ localStorage và chuyển đổi sang cấu trúc mong muốn
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+        // Gọi API thanh toán
+        $.ajax({
+            url: 'https://localhost:7248/api/CartControllerAPI/ThanhToan',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                ten: ten,
+                sdt: sdt,
+                diaChi: diaChi,
+                hinhThucThanhToan: $('#httt').val(),
+                cartItems: cart.map(item => ({
+                    quantity: item.quantity,
+                    cartItems: {
+                        maSp: item.productId,
+                        tenSp: item.productName,
+                        moTa: item.description || "", // Mô tả sản phẩm (nếu có)
+                        anh1: item.productImage, // Ảnh sản phẩm chính
+                        anh2: item.productImage2 || "", // Ảnh phụ 1 (nếu có)
+                        anh3: item.productImage3 || "", // Ảnh phụ 2 (nếu có)
+                        anh4: item.productImage4 || "", // Ảnh phụ 3 (nếu có)
+                        anh5: item.productImage5 || "", // Ảnh phụ 4 (nếu có)
+                        anh6: item.productImage6 || "", // Ảnh phụ 5 (nếu có)
+                        soLuongDaBan: item.soldQuantity || 0, // Số lượng đã bán
+                        soLuongTrongKho: item.stockQuantity || 0, // Số lượng trong kho
+                        giaTien: item.productPrice,
+                        maHang: item.brandId || 0, // Mã hãng
+                        maDanhMuc: item.categoryId || 0 // Mã danh mục
+                    }
+                }))
+            }),
+            success: function (response) {
+                if (response.status === true) {
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'success',
+                        title: 'Thanh toán thành công',
+                        confirmButtonText: 'OK',
+                    }).then(() => {
+                        localStorage.removeItem('cart'); // Xóa giỏ hàng sau khi thanh toán thành công
+                        window.location.href = '/Home/Index';
+                    });
+                } else {
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'error',
+                        title: response.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'error',
+                    title: 'Lỗi khi thanh toán',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+        });
+    };
+
+
+</script>

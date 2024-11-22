@@ -1,0 +1,216 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Left column -->
+                <div class="col-md-6">
+                    <!-- General form elements -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Cập nhật thông tin hãng</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form id="frmSuaHang" method="post">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="tenhangmoi">Tên hãng:</label>
+                        <input type="text" class="form-control" id="tenhangmoi" name="Moi" placeholder="Nhập tên hãng">
+                    </div>
+                    <!-- Hidden input để lưu trữ ID của hãng -->
+                    <input type="hidden" id="MaHang" value="">
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-primary" id="confirm">Lưu</button>
+                        <button type="button" class="btn btn-default" id="cancel">Hủy bỏ</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<!-- Bao gồm các thư viện cần thiết từ server -->
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="~/Admin/dist/js/adminlte.min.js"></script>
+
+
+<script src="~/new/jwt-decode.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Hàm để lấy số cuối cùng từ URL
+        function getLastSegmentAsNumber() {
+            // Lấy pathname từ URL hiện tại, ví dụ: "/Admin/SuaHang/2"
+            var pathname = window.location.pathname;
+
+            // Loại bỏ ký tự '/' cuối cùng nếu có
+            if (pathname.endsWith('/')) {
+                pathname = pathname.slice(0, -1);
+            }
+
+            // Chia nhỏ pathname thành các phần bằng '/'
+            var segments = pathname.split('/');
+
+            // Lấy phần tử cuối cùng
+            var lastSegment = segments.pop();
+
+            // Chuyển đổi thành số nguyên
+            var id = parseInt(lastSegment, 10);
+
+            // Kiểm tra xem phần tử cuối cùng có phải là số không
+            if (isNaN(id)) {
+                console.error("Không tìm thấy ID hợp lệ trong URL.");
+                alert("Không tìm thấy ID hợp lệ trong URL.");
+                return null;
+            }
+
+            return id;
+        }
+
+        // Lấy ID từ URL
+        var brandId = getLastSegmentAsNumber();
+        if (!brandId) {
+            // Nếu không có ID, chuyển hướng hoặc thông báo lỗi
+            window.location = '@Url.Action("QuanLyHang", "Admin")';
+            return;
+        }
+
+        // Lưu MaHang vào hidden input (nếu cần)
+        $('#MaHang').val(brandId);
+
+        // Lấy token từ localStorage
+        var token = localStorage.getItem('token');
+        if (!token) {
+            // Chưa đăng nhập, chuyển hướng đến trang đăng nhập
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token để lấy vai trò
+        var decodedToken = jwt_decode(token);
+        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+        console.log("Vai trò của người dùng:", roles);
+
+        // Kiểm tra xem người dùng có vai trò 'admin' hoặc 'manager' không
+        var hasAccess = false;
+        if (Array.isArray(roles)) {
+            hasAccess = roles.includes('admin') || roles.includes('manager');
+        } else {
+            hasAccess = roles === 'admin' || roles === 'manager';
+        }
+
+        if (!hasAccess) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/'; // Chuyển hướng đến trang chủ hoặc trang thông báo
+            return;
+        }
+
+        // Gọi API để lấy thông tin hãng sản phẩm
+        $.ajax({
+            url: `https://localhost:7248/api/Brand/hangs/${brandId}`, // URL API để lấy thông tin hãng
+            method: 'GET',
+            contentType: 'application/json',
+            dataType: 'json',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            success: function (res) {
+                 console.log("Dữ liệu", res);
+                if ( res) {
+                    console.log("Dữ liệu", res);
+                    // Điền dữ liệu vào form
+                    $('#tenhangmoi').val(res.tendm); // Giả sử API trả về trường 'tenHang'
+                } else {
+                    alert('Không lấy được thông tin hãng.');
+                    window.location = '@Url.Action("QuanLyHang", "Admin")';
+                }
+            },
+            error: function (error) {
+                console.error('Lỗi khi lấy thông tin hãng:', error);
+                alert("Có lỗi xảy ra, vui lòng thử lại.");
+                window.location = '@Url.Action("QuanLyHang", "Admin")';
+            }
+        });
+
+        // Gắn sự kiện cho nút Lưu khi trang được tải
+        $('#confirm').on('click', function () {
+            SuaHang(brandId);
+        });
+
+        // Gắn sự kiện cho nút Hủy bỏ
+        $('#cancel').on('click', function () {
+            window.location = '@Url.Action("QuanLyHang", "Admin")';
+        });
+    });
+
+    function SuaHang(id) {
+        // Lấy token từ localStorage
+        var token = localStorage.getItem('token');
+        if (!token) {
+            // Chưa đăng nhập, chuyển hướng đến trang đăng nhập
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token để lấy vai trò
+        var decodedToken = jwt_decode(token);
+        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+        console.log("Vai trò của người dùng:", roles);
+
+        // Kiểm tra xem người dùng có vai trò 'admin' hoặc 'manager' không
+        var hasAccess = false;
+        if (Array.isArray(roles)) {
+            hasAccess = roles.includes('admin') || roles.includes('manager');
+        } else {
+            hasAccess = roles === 'admin' || roles === 'manager';
+        }
+
+        if (!hasAccess) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/'; // Chuyển hướng đến trang chủ hoặc trang thông báo
+            return;
+        }
+
+        var tenhang = $('#tenhangmoi').val().trim();
+        if (tenhang === "") {
+            alert("Bạn chưa nhập tên hãng.");
+            return;
+        }
+
+        // Gửi yêu cầu cập nhật hãng sản phẩm
+        $.ajax({
+            url: `https://localhost:7248/api/Brand/hangs/${id}`, // URL API để cập nhật hãng
+            method: 'PUT', // Sử dụng PUT để cập nhật
+            contentType: 'application/json', // Gửi dữ liệu dưới dạng JSON
+            dataType: 'json',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            data: JSON.stringify({ name: tenhang }), // Gửi tên hãng dưới dạng JSON object
+            success: function (res) {
+                if (res) {
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'success',
+                        title: 'Sửa thành công',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location = '@Url.Action("QuanLyHang", "Admin")';
+                    });
+                } else {
+                    alert(res.message || "Sửa hãng không thành công.");
+                }
+            },
+            error: function (error) {
+                console.error('Lỗi khi sửa hãng:', error);
+                alert("Có lỗi xảy ra, vui lòng thử lại.");
+            }
+        });
+    }
+</script>

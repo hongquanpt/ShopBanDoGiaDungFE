@@ -1,0 +1,201 @@
+﻿@{
+    Layout = null;
+    var previousPage = ViewBag.previousPage;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/Access/style.css">
+    <title>Đăng nhập</title>
+</head>
+<body>
+    <div class="form-structor">
+        <!-- Form đăng nhập -->
+        <div class="signup">
+            <h2 class="form-title" id="signup">Đăng nhập</h2>
+            <form id="loginForm" method="POST">
+                <div class="form-holder">
+                    <input type="email" class="input" name="Email" placeholder="Email" required />
+                    <input type="password" class="input" name="Password" placeholder="Mật khẩu" required autocomplete="off" />
+                </div>
+                <input type="hidden" name="previousPage" value="@previousPage" />
+                <span id="loginError" style="color: red; font-size: 13px; margin-left: 4px;"></span>
+                <button type="submit" class="submit-btn">Đăng nhập</button>
+                <p>Bạn chưa có tài khoản? <a href="#" id="showRegisterForm">Đăng ký</a></p>
+            </form>
+        </div>
+
+        <!-- Form đăng ký -->
+        <div class="login slide-up" style="display: none;">
+            <div class="center">
+                <h2 class="form-title" id="login">Đăng ký</h2>
+                <form id="registerForm" method="POST">
+                    <div class="form-holder">
+                        <input type="text" class="input" name="Ten" placeholder="Họ và Tên" required />
+                        <input type="date" class="input" name="NgaySinh" placeholder="Ngày sinh" />
+                        <input type="text" class="input" name="DiaChi" placeholder="Địa chỉ" />
+                        <input type="text" class="input" name="Sdt" placeholder="Số điện thoại" />
+                        <input type="email" class="input" name="Email" placeholder="Email" required />
+                        <input type="password" class="input" name="Password" placeholder="Mật khẩu" required autocomplete="off" />
+                    </div>
+                    <input type="hidden" name="previousPage" value="@previousPage" />
+                    <span id="registerError" style="color: red; font-size: 13px; margin-left: 4px;"></span>
+                    <button type="submit" class="submit-btn">Đăng ký</button>
+                    <p>Bạn đã có tài khoản? <a href="#" id="showLoginForm">Đăng nhập</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bao gồm thư viện jQuery -->
+    <script src="~/new/jquery-3.6.0.min.js"></script>
+    <script src="~/new/jwt-decode.min.js"></script>
+    <!-- Bao gồm script.js nếu bạn có thêm các hiệu ứng khác -->
+    <script src="~/Access/script.js"></script>
+
+    <!-- Script để xử lý đăng nhập và đăng ký -->
+    <script>
+        $(document).ready(function () {
+            // Chuyển đổi giữa form đăng nhập và đăng ký
+            $('#showRegisterForm').on('click', function (e) {
+                e.preventDefault();
+                $('.signup').hide();
+                $('.login').show();
+            });
+
+            $('#showLoginForm').on('click', function (e) {
+                e.preventDefault();
+                $('.login').hide();
+                $('.signup').show();
+            });
+
+            // Hàm để lấy danh sách quyền của người dùng
+            function fetchUserPermissions(token) {
+                return $.ajax({
+                    url: 'https://localhost:7248/api/AccessControllerAPI/GetUserPermissions',
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+            }
+
+            // Xử lý đăng nhập
+            $('#loginForm').on('submit', function (e) {
+                e.preventDefault();
+
+                // Lấy giá trị từ form
+                var email = $(this).find('input[name="Email"]').val().trim();
+                var password = $(this).find('input[name="Password"]').val().trim();
+                var previousPage = $(this).find('input[name="previousPage"]').val();
+
+                // Kiểm tra thông tin nhập vào
+                if (!email || !password) {
+                    $('#loginError').text('Vui lòng nhập đầy đủ email và mật khẩu.');
+                    return;
+                }
+
+                // Tạo đối tượng dữ liệu để gửi
+                var loginData = {
+                    Email: email,
+                    Password: password
+                };
+
+                $.ajax({
+                    url: 'https://localhost:7248/api/AccessControllerAPI/login',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify(loginData),
+                    success: function (response) {
+                        if (response && response.token) {
+                            var token = response.token;
+                            var decodedToken = jwt_decode(token);
+                            console.log(decodedToken);
+                            // Lưu token vào localStorage
+                            localStorage.setItem('token', token);
+
+                            // Thiết lập token cho tất cả các yêu cầu AJAX
+                            $.ajaxSetup({
+                                beforeSend: function (xhr) {
+                                    var token = localStorage.getItem('token');
+                                    if (token) {
+                                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                                    }
+                                }
+                            });
+
+                            // Gọi hàm fetchUserPermissions để lấy danh sách quyền
+                            fetchUserPermissions(token)
+                                .done(function (permissions) {
+                                    // Lưu danh sách quyền vào localStorage
+                                    localStorage.setItem('permissions', JSON.stringify(permissions));
+                                    console.log(permissions);
+                                    // Chuyển hướng đến trang trước đó hoặc trang chính
+                                    if (previousPage) {
+                                           window.location.href = previousPage;
+                                    } else {
+                                           window.location.href = '/';
+                                    }
+                                })
+                                .fail(function (xhr) {
+                                    console.error('Lỗi khi lấy danh sách quyền:', xhr.responseText);
+                                    $('#loginError').text('Lỗi khi lấy danh sách quyền. Vui lòng thử lại.');
+                                });
+                        } else {
+                            // Hiển thị thông báo lỗi nếu token không nhận được
+                            $('#loginError').text('Đăng nhập không thành công. Vui lòng thử lại.');
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('Lỗi khi đăng nhập:', xhr.responseText);
+                        var errorMessage = 'Email hoặc mật khẩu không đúng.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        $('#loginError').text(errorMessage);
+                    }
+                });
+            });
+
+            // Xử lý đăng ký
+            $('#registerForm').on('submit', function (e) {
+                e.preventDefault();
+                var data = {
+                    Ten: $(this).find('input[name="Ten"]').val(),
+                    NgaySinh: $(this).find('input[name="NgaySinh"]').val(),
+                    DiaChi: $(this).find('input[name="DiaChi"]').val(),
+                    Sdt: $(this).find('input[name="Sdt"]').val(),
+                    Email: $(this).find('input[name="Email"]').val(),
+                    Password: $(this).find('input[name="Password"]').val(),
+                    previousPage: $(this).find('input[name="previousPage"]').val()
+                };
+
+                $.ajax({
+                    url: 'https://localhost:7248/api/AccessControllerAPI/register',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function (response) {
+                        alert('Đăng ký thành công. Vui lòng đăng nhập.');
+                        // Chuyển sang form đăng nhập
+                        $('.login').hide();
+                        $('.signup').show();
+                    },
+                    error: function (xhr) {
+                        console.error('Lỗi khi đăng ký:', xhr.responseText);
+                        var errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        $('#registerError').text(errorMessage);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

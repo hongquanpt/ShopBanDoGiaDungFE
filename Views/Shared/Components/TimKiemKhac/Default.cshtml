@@ -1,0 +1,136 @@
+
+<style>
+    .separator {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        font-size: 25px;
+        margin-bottom: 15px;
+        margin-top: 10px;
+    }
+
+        .separator::before,
+        .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #0000005f;
+        }
+
+        .separator:not(:empty)::before {
+            margin-right: .25em;
+        }
+
+        .separator:not(:empty)::after {
+            margin-left: .25em;
+        }
+</style>
+<div style="margin-bottom: 17px;">
+    <!-- Danh mục -->
+    <div class="separator">Danh mục</div>
+    <div class="row" id="categories-container"></div>
+
+    <!-- Hãng sản xuất -->
+    <div class="separator">Hãng sản xuất</div>
+    <div class="row" id="brands-container"></div>
+
+    <!-- Khoảng giá -->
+    <div class="separator">Chọn khoảng giá</div>
+    <div class="row">
+        <!-- Các lựa chọn giá mặc định -->
+        <div class="form-check col col-sm-6">
+            <input onclick="applyFilters()" class="form-check-input" type="checkbox" name="maxPrice" value="10000000" />
+            <label class="form-check-label">Dưới 10tr</label>
+        </div>
+        <div class="form-check col col-sm-6">
+            <input onclick="applyFilters()" class="form-check-input" type="checkbox" name="minPrice" value="10000000" />
+            <label class="form-check-label">Trên 10tr</label>
+        </div>
+        <div class="form-check col col-sm-8">
+            <label>Nhập giá nhỏ nhất</label>
+            <input type="text" id="min_price_search" placeholder="Nhập giá nhỏ nhất" />
+        </div>
+        <div class="form-check col col-sm-8">
+            <label>Nhập giá lớn nhất</label>
+            <input type="text" id="max_price_search" placeholder="Nhập giá lớn nhất" />
+        </div>
+        <div class="form-check col col-sm-4">
+            <button onclick="applyFilters()" style="width: 100%;">Lọc</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+        $(document).ready(function () {
+        const token = localStorage.getItem('token');
+        // if (!token) {
+        //     window.location.href = '/Access/Login';
+        //     return;
+        //     }
+
+        // Lưu trữ các lựa chọn đã chọn vào `localStorage`
+        const selectedCategories = JSON.parse(localStorage.getItem("selectedCategories")) || [];
+        const selectedBrands = JSON.parse(localStorage.getItem("selectedBrands")) || [];
+
+        // Hàm tải danh mục và hãng từ API
+        function loadCategoriesAndBrands() {
+            $.ajax({
+                url: "https://localhost:7248/api/Category/danhmucs",
+                    type: "GET",
+                dataType: "json",
+                headers: { "Authorization": `Bearer ${token}` },
+                success: function (categories) {
+                    $("#categories-container").empty();
+                  
+                categories.data.forEach(category => {
+                    const isChecked = selectedCategories.includes(category.maDanhMuc.toString()) ? 'checked' : '';
+                    const categoryHtml = `
+                        <div class="form-check col col-sm-6">
+                            <input onclick="applyFilters()" class="form-check-input"
+                                   type="checkbox" id="category-${category.maDanhMuc}"
+                                       name="category" value="${category.maDanhMuc}" ${isChecked}/>
+                            <label class="form-check-label" for="category-${category.maDanhMuc}">
+                                ${category.tenDanhMuc}
+                            </label>
+                        </div>`;
+                    $("#categories-container").append(categoryHtml);
+                });
+            }
+            });
+
+        $.ajax({
+                url: "https://localhost:7248/api/Brand/hangs",
+                type: "GET",
+                dataType: "json",
+                headers: { "Authorization": `Bearer ${token}` },
+                success: function (brands) {
+                    $("#brands-container").empty();
+                    brands.data.forEach(brand => {
+                        const isChecked = selectedBrands.includes(brand.maHang.toString()) ? 'checked' : '';
+                        const brandHtml = `
+                            <div class="form-check col col-sm-6">
+                                <input onclick="applyFilters()" class="form-check-input"
+                                       type="checkbox" id="brand-${brand.maHang}"
+                                       name="brand" value="${brand.maHang}" ${isChecked}/>
+                                <label class="form-check-label" for="brand-${brand.maHang}">
+                                    ${brand.tenHang}
+                                </label>
+                            </div>`;
+                        $("#brands-container").append(brandHtml);
+                    });
+                }
+            });
+        }
+
+        // Gọi hàm để tải danh mục và hãng sản xuất
+        loadCategoriesAndBrands();
+
+        // Hàm xử lý bộ lọc và lưu vào `localStorage`
+        
+
+        // Tải lại các lựa chọn từ `localStorage`
+        selectedCategories.forEach(id => $(`#category-${id}`).prop('checked', true));
+        selectedBrands.forEach(id => $(`#brand-${id}`).prop('checked', true));
+    });
+</script>
+<script src="~/js/main.js"></script>

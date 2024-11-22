@@ -1,0 +1,451 @@
+﻿@{
+ 
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/HomeShoppe/css/easy-responsive-tabs.css" rel="stylesheet" type="text/css" media="all" />
+
+
+
+
+<!-- jQuery và Bootstrap JS -->
+<script src="~/new/jquery-3.6.0.min.js"></script>
+<script src="~/BigShopee/js/jquery.flexisel.js"></script>
+<script src="~/BigShopee/js/jquery.etalage.min.js"></script>
+<script src="~/HomeShoppe/js/easyResponsiveTabs.js" type="text/javascript"></script>
+<script src="~/new/sweetalert2@10.js"></script>
+<!-- SweetAlert2 cho các thông báo -->
+
+
+<style>
+    /* CSS tùy chỉnh của bạn (nếu cần) */
+</style>
+
+<div class="single_top">
+    <div class="single_grid">
+        <!-- Hình ảnh sản phẩm -->
+        <div class="grid images_3_of_2">
+            <ul id="etalage" class="etalage">
+                <!-- Nội dung sẽ được thêm bằng JavaScript -->
+            </ul>
+            <div class="clearfix"></div>
+        </div>
+
+        <!-- Mô tả sản phẩm -->
+        <div class="desc1 span_3_of_2">
+            <h4 id="productName">Tên sản phẩm</h4>
+            <div id="productRating">
+                <!-- Đánh giá sẽ được thêm bằng JavaScript -->
+            </div>
+            <div class="cart-b">
+                <div class="left-n" id="productPrice">Giá tiền</div>
+                <a class="now-get get-cart"
+                   href="#"
+                   data-id="product.maSp"
+                   data-name="product.tenSp"
+                   data-image="product.anh1"
+                   data-price="product.giaTien"
+                   onclick="addItem(this)">
+                    THÊM VÀO GIỎ
+                </a>
+
+                <div class="clearfix"></div>
+            </div>
+            <h6>Đã bán: <span style="color:red" id="soldQuantity">0</span> sản phẩm, còn <span style="color:red" id="stockQuantity">0</span> sản phẩm</h6>
+            <p id="productDescription">Mô tả sản phẩm.</p>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+
+    <!-- Tab Đánh giá -->
+    <div class="product_desc">
+        <div id="horizontalTab" style="display: block; width: 100%; margin: 0px;">
+            <ul class="resp-tabs-list">
+                <li class="resp-tab-item" aria-controls="tab_item-2" role="tab">Đánh giá</li>
+                <div class="clear"></div>
+            </ul>
+            <div class="resp-tabs-container">
+                <h2 class="resp-accordion" role="tab" aria-controls="tab_item-2"><span class="resp-arrow"></span>Đánh giá</h2>
+                <div class="review resp-tab-content resp-tab-active" aria-labelledby="tab_item-2">
+                    <div class="your-review">
+                        <div id="div_allcomment">
+                            <h3>Tất cả đánh giá (<span id="commentCount">0</span> đánh giá)</h3>
+                            <!-- Đánh giá sẽ được thêm bằng JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chi Tiết Đơn Hàng (nếu cần) -->
+    <div id="orderDetailModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <!-- Nội dung sẽ được thêm vào bằng JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+        // Chỉ hiển thị số lượng nếu khác 0
+        $('#dot-cart').html(totalCount > 0 ? totalCount : '');
+    }
+
+    function addItem(element) {
+        // Truy xuất các giá trị từ data-attributes
+        var productId = $(element).data('id');
+        var productName = $(element).data('name');
+        var productImage = $(element).data('image');
+        var productPrice = $(element).data('price');
+
+        console.log("Product ID:", productId);
+        console.log("Product Name:", productName);
+        console.log("Product Image:", productImage);
+        console.log("Product Price:", productPrice);
+
+        // Tạo đối tượng dữ liệu để gửi trong body
+        var requestData = {
+            ProductId: productId,
+            CheckOnly: true
+        };
+
+        // Gọi API để kiểm tra trạng thái hàng trước khi thêm
+        $.ajax({
+            url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON
+            data: JSON.stringify(requestData), // Chuyển đổi đối tượng thành chuỗi JSON
+            success: function (response) {
+                if (response.status === true) {
+                    // Nếu sản phẩm còn trong kho, thêm vào localStorage
+                    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                    let existingItem = cart.find(item => item.productId === productId);
+
+                    if (existingItem) {
+                        existingItem.quantity += 1; // Tăng số lượng nếu sản phẩm đã tồn tại
+                    } else {
+                        // Thêm sản phẩm mới vào giỏ hàng
+                        cart.push({
+                            productId: productId,
+                            productName: productName,
+                            productImage: productImage,
+                            productPrice: productPrice,
+                            quantity: 1
+                        });
+                    }
+                    console.log("Updated Cart:", cart);
+                    // Lưu giỏ hàng trở lại vào localStorage
+                    localStorage.setItem('cart', JSON.stringify(cart));
+
+                    // Cập nhật hiển thị số lượng giỏ hàng
+                    updateCartCount();
+
+                    // Thông báo thành công
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'success',
+                        title: 'Thêm sản phẩm vào giỏ hàng thành công',
+                        showConfirmButton: false,
+                        timer: 700
+                    });
+                } else {
+                    // Hiển thị thông báo lỗi nếu sản phẩm hết hàng
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'error',
+                        title: response.message || 'Sản phẩm hiện không còn trong kho.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'error',
+                    title: 'Lỗi khi kiểm tra trạng thái sản phẩm',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        const token = localStorage.getItem('token');
+        
+
+        // Hàm trích xuất ID sản phẩm từ URL
+        function getProductIdFromURL() {
+            var path = window.location.pathname;
+            var segments = path.split('/');
+            var id = segments.pop() || segments.pop(); // Xóa phần trống nếu URL kết thúc bằng '/'
+            return parseInt(id) || 0;
+        }
+
+        var productId = getProductIdFromURL();
+
+        if (productId === 0) {
+            Swal.fire({
+                position: 'center',
+                icon: 'error',
+                title: 'Không tìm thấy ID sản phẩm trong URL.',
+                showConfirmButton: false,
+                timer: 1500
+            });
+            // Bạn có thể chuyển hướng người dùng hoặc xử lý theo cách khác
+            return;
+        }
+
+        // Hàm format currency
+        function formatCurrency(cur) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(cur);
+        }
+
+        // Lấy thông tin sản phẩm và đánh giá từ API
+        function getProductDetail(id) {
+            // Tạo đối tượng dữ liệu để gửi trong body
+            var requestData = {
+                Id: id
+            };
+            $.ajax({
+                url: `https://localhost:7248/api/HomeControllerAPI/ProductDetail`,
+                type: 'POST',
+                dataType: 'json',
+                contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON
+                data: JSON.stringify(requestData), // Chuyển đổi đối tượng thành chuỗi JSON
+                success: function (data) {
+                    console.log("data", data);
+                    var product = data.sanpham;
+                    var comments = data.danhgia;
+                    console.log("comments:", comments.length);
+                    console.log("product:", product);
+                    // Cập nhật hình ảnh sản phẩm
+                    var etalage = $('#etalage');
+                    etalage.empty();
+                    // Tạo một mảng chứa các URL hình ảnh từ anh1 đến anh6
+                    var images = [
+                        product.anh1,
+                        product.anh2,
+                        product.anh3,
+                        product.anh4,
+                        product.anh5,
+                        product.anh6
+                    ];
+                    images.forEach(function (img, index) {
+                        console.log(img);
+                        var li = `<li>
+                                <a href="optionallink.html">
+                                    <img class="etalage_thumb_image img-responsive" src="${img}" />
+                                    <img class="etalage_source_image img-responsive" src="${img}" title="" />
+                                </a>
+                            </li>`;
+                        etalage.append(li);
+                    });
+                    
+                    // Cập nhật tên sản phẩm
+                    $('#productName').text(product.tenSp);
+
+                    // Cập nhật giá tiền
+                    $('#productPrice').text(formatCurrency(product.giaTien));
+
+                    // Cập nhật số lượng đã bán và còn lại
+                    $('#soldQuantity').text(product.soLuongDaBan);
+                    $('#stockQuantity').text(product.soLuongTrongKho);
+
+                    // Cập nhật mô tả sản phẩm
+                    $('#productDescription').text(product.moTa);
+                    // Xóa nút thêm vào giỏ hàng cũ nếu có
+                    $('.cart-b .get-cart').remove();
+
+                    // Tạo nút thêm vào giỏ hàng mới với data-attributes
+                    var addToCartButton = `
+                    <a class="now-get get-cart" href="#"
+                       data-id="${product.maSp}"
+                       data-name="${product.tenSp.replace(/"/g, '&quot;')}"
+                       data-image="${product.anh1.replace(/"/g, '&quot;')}"
+                       data-price="${product.giaTien}"
+                       onclick="addItem(this)">
+                       THÊM VÀO GIỎ
+                    </a>
+                `;
+                    $('.cart-b').append(addToCartButton);
+                    // Cập nhật đánh giá
+                    renderRating(data.sao, comments.length);
+                    console.log(comments.danhGia);
+                    // Cập nhật danh sách đánh giá
+                    renderComments(comments);
+                },
+                error: function (error) {
+                    console.error("Error fetching product details:", error);
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'error',
+                        title: 'Đã xảy ra lỗi khi lấy thông tin sản phẩm.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            });
+        }
+
+        // Hàm render đánh giá tổng quan
+        function renderRating(sao, count) {
+            var productRating = $('#productRating');
+            productRating.empty();
+
+            if (sao === 0) {
+                productRating.append('<span>Chưa có đánh giá</span>');
+            } else {
+                console.log(sao);
+                console.log("Cont",count);
+                var starHtml = `<ul class="list-inline mb-0" style="font-size: 16px;">
+                        <li>${sao.toFixed(1)} / 5.0 (${count} đánh giá)</li>`;
+
+                // Tạo các ngôi sao dựa trên số sao
+                for (var i = 1; i <= 5; i++) {
+                    if (sao >= i) {
+                        starHtml += '<li class="list-inline-item me-0"><i class="fas fa-star text-warning" style="color:yellow"></i></li>';
+                    } else if (sao > (i - 1) && sao < i) {
+                        starHtml += '<li class="list-inline-item me-0"><i class="fas fa-star-half-alt text-warning" style="color:yellow"></i></li>';
+                    } else {
+                        starHtml += '<li class="list-inline-item me-0"><i class="far fa-star text-warning" style="color:yellow"></i></li>';
+                    }
+                }
+
+                starHtml += '</ul>';
+                productRating.append(starHtml);
+            }
+        }
+
+        // Hàm render danh sách đánh giá
+        function renderComments(comments) {
+            $('#commentCount').text(comments.length);
+            var commentContainer = $('#div_allcomment');
+            console.log(comments);
+            comments.forEach(function (comment) {
+                var starHtml = '<ul class="list-inline mb-0">';
+                for (var i = 1; i <= 5; i++) {
+                    if (comment.danhGia >= i) {
+                        starHtml += '<li class="list-inline-item me-0"><i class="fas fa-star text-warning" style="color:yellow"></i></li>';
+                    } else if (comment.danhGia > (i - 1) && comment.danhGia < i) {
+                        starHtml += '<li class="list-inline-item me-0"><i class="fas fa-star-half-alt text-warning" style="color:yellow"></i></li>';
+                    } else {
+                        starHtml += '<li class="list-inline-item me-0"><i class="far fa-star text-warning" style="color:yellow"></i></li>';
+                    }
+                }
+                starHtml += '</ul>';
+
+                var commentHtml = `
+                        <div class="row" style="margin-left: 14px; margin-top: 24px;">
+                            <div class="d-md-flex my-4" style="display:inline-flex">
+                                <div class="avatar avatar-xl me-4 flex-shrink-0">
+                                    <img class="avatar-img img-circle" src="~/BigShopee/images/avartar.jpg" alt="avatar" width="40" style="width: 79px; margin-top: 9px">
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="d-sm-flex mt-1 mt-md-0 align-items-center">
+                                        <h5 class="me-3 mb-0">${comment.tenTaiKhoan}</h5>
+                                        ${starHtml}
+                                    </div>
+                                    <p class="small mb-2">${new Date(comment.thoiGian).toLocaleString()}</p>
+                                    <div class="mt-2">
+                                        <p class="mb-2">${comment.noiDung}</p>
+                                        <div class="bg-white"></div>
+                                        <div class="d-flex flex-row">
+                                            <a class="accordion-collapse collapse show" href="#commmentreply-${comment.ID}" data-toggle="collapse" aria-expanded="true" aria-controls="collapse-${comment.ID}">
+                                                <i class="fas fa-reply me-2"></i>Phản hồi
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                commentContainer.append(commentHtml);
+            });
+        }
+
+       
+
+        // Xử lý sự kiện khi nhấn vào nút thêm vào giỏ hàng
+        $('#btnAdd').click(function (e) {
+            e.preventDefault();
+            addItem(productId);
+        });
+
+        // Khởi chạy các hàm lấy dữ liệu
+        getProductDetail(productId);
+
+        // Khởi tạo Etalage plugin sau khi hình ảnh đã được tải
+        $(document).ajaxStop(function () {
+            $('#etalage').etalage({
+                thumb_image_width: 400,
+                thumb_image_height: 400,
+                source_image_width: 900,
+                source_image_height: 1200,
+                show_hint: true,
+                click_callback: function (image_anchor, instance_id) {
+                    alert('Bạn đã click vào hình ảnh với anchor: "' + image_anchor + '"\n(trong Etalage instance: "' + instance_id + '")');
+                }
+            });
+        });
+
+        // Khởi tạo Flexisel
+        $("#flexiselDemo1").flexisel({
+            visibleItems: 5,
+            animationSpeed: 1000,
+            autoPlay: true,
+            autoPlaySpeed: 3000,
+            pauseOnHover: true,
+            enableResponsiveBreakpoints: true,
+            responsiveBreakpoints: {
+                portrait: {
+                    changePoint: 480,
+                    visibleItems: 1
+                },
+                landscape: {
+                    changePoint: 640,
+                    visibleItems: 2
+                },
+                tablet: {
+                    changePoint: 768,
+                    visibleItems: 3
+                }
+            }
+        });
+
+        // Khởi tạo Easy Responsive Tabs
+        $('#horizontalTab').easyResponsiveTabs({
+            type: 'default', // Types: default, vertical, accordion
+            width: 'auto', // auto or any width like 600px
+            fit: true // 100% fit in a container
+        });
+    });
+    $(document).ready(function () {
+
+
+        updateCartCount();
+    });
+</script>
+
+<script>
+    // Hàm định dạng tiền tệ (nếu cần sử dụng ở nơi khác)
+    function formatCurrency(cur) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(cur);
+    }
+
+    // Nếu cần cập nhật giá tiền ở các phần tử khác
+    /*
+    const moneylist = document.querySelectorAll(".left-n");
+    for (let i = 0; i < moneylist.length; i++) {
+        moneylist[i].innerHTML = formatCurrency(Number(moneylist[i].innerHTML));
+    }
+    */
+</script>

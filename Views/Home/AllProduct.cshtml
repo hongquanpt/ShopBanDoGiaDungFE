@@ -1,0 +1,165 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var max_price = ViewBag.maxPrice;
+    var min_price = ViewBag.minPrice;
+    var order_price = ViewBag.orderPrice;
+}
+
+<div class="shoes-grid">
+    <div class="products" style="margin-top: 28px;">
+        <h5 class="latest-product">TẤT CẢ SẢN PHẨM</h5>
+    </div>
+
+    <div style="margin-top: 90px; display: flex; justify-content: flex-end; margin-right: 30px;">
+        <div style="display: flex; flex-direction: column; margin-left: 30px; margin-top: 21px;">
+            <select id="select-order-price" style="margin-bottom: 15px;">
+                <option value="notorder" selected>Sắp xếp tăng/giảm của giá</option>
+                <option value="tang">Giá tăng dần</option>
+                <option value="giam">Giá giảm dần</option>
+            </select>
+            <button onclick="ChuyenTrang(1, 6)">
+                <div style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-funnel-fill" viewBox="0 0 16 16">
+                        <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z" />
+                    </svg>
+                    <span style="margin-left: 4px;">Lọc</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <div class="product-left" id="product-list">
+        <!-- Sản phẩm sẽ được thêm vào đây bằng JavaScript -->
+    </div>
+
+    <nav style="float: right; margin-right: 29px;" aria-label="Page navigation example">
+        <ul class="pagination justify-content-end" id="pagination">
+            <!-- Phân trang sẽ được thêm vào đây bằng JavaScript -->
+        </ul>
+    </nav>
+</div>
+<script src="~/new/jquery-3.6.0.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Gọi API để lấy danh sách sản phẩm khi tải trang
+        loadProducts(1, 6);
+
+        // Định dạng tiền tệ
+        function formatcurrency(cur) {
+            return new Intl.NumberFormat('vi-vn', { style: 'currency', currency: 'VND' }).format(cur);
+        }
+
+        // Hàm lấy sản phẩm từ API
+        function loadProducts(pageIndex, pageSize) {
+            const maxPrice = parseInt($("#max-price").val()?.replace(/,/g, '')) || 100000000;
+            const minPrice = parseInt($("#min-price").val()?.replace(/,/g, '')) || 0;
+            const orderPrice = $("#select-order-price").val() || "notorder";
+
+            $.ajax({
+                url: `https://localhost:7248/api/HomeControllerAPI/AllProduct?pageIndex=${pageIndex}&pageSize=${pageSize}&maxPrice=${maxPrice}&minPrice=${minPrice}&orderPrice=${orderPrice}`,
+                method: 'GET',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                },
+                success: function (res) {
+                    $("#product-list").empty();
+                    res.data.forEach(function (product) {
+                        const productHtml = `
+                                <div class="col-md-4 chain-grid" style="min-height: 406.29px;">
+                                    <a href="/Home/ProductDetail/${product.maSp}"><img class="img-responsive chain" src="~/BigShopee/images/${product.anh1}" alt=" "></a>
+                                    <span class="star"></span>
+                                    <div class="grid-chain-bottom">
+                                        <h6><a href="/Home/ProductDetail/${product.maSp}">${product.tenSp}</a></h6>
+                                        <div class="star-price">
+                                            <div class="dolor-grid">
+                                                <span class="actual">${formatcurrency(product.giaTien)}</span>
+                                                <br /><span>Đã bán ${product.soLuongDaBan}</span>
+                                            </div>
+                                            <a class="now-get get-cart" onclick="addItem(${product.maSp})">THÊM VÀO GIỎ</a>
+                                            <div class="clearfix"></div>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        $("#product-list").append(productHtml);
+                    });
+                    renderPagination(res.pageIndex, res.totalPage, res.canPrevious, res.canNext);
+                },
+                error: function (xhr) {
+                    console.error('Lỗi khi lấy sản phẩm:', xhr.responseText);
+                    alert('Không thể tải sản phẩm');
+                }
+            });
+        }
+
+        // Hàm phân trang
+        function renderPagination(pageIndex, totalPages, canPrevious, canNext) {
+            $("#pagination").empty();
+
+            if (canPrevious) {
+                $("#pagination").append(`<li class="page-item"><a class="page-link" onclick="loadProducts(${pageIndex - 1}, 6)">Previous</a></li>`);
+            } else {
+                $("#pagination").append(`<li class="page-item disabled"><a class="page-link">Previous</a></li>`);
+            }
+
+            for (let i = Math.max(1, pageIndex - 2); i <= Math.min(totalPages, pageIndex + 2); i++) {
+                $("#pagination").append(`<li class="page-item ${i === pageIndex ? 'active' : ''}"><a class="page-link" onclick="loadProducts(${i}, 6)">${i}</a></li>`);
+            }
+
+            if (canNext) {
+                $("#pagination").append(`<li class="page-item"><a class="page-link" onclick="loadProducts(${pageIndex + 1}, 6)">Next</a></li>`);
+            } else {
+                $("#pagination").append(`<li class="page-item disabled"><a class="page-link">Next</a></li>`);
+            }
+        }
+
+        // Hàm thêm sản phẩm vào giỏ hàng
+        function addItem(maSp) {
+            $.ajax({
+                url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
+                data: { productId: maSp },
+                type: 'POST',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                },
+                success: function (res) {
+                    if (res.status) {
+                        $('#dot-cart').html(res.countCart);
+                        Swal.fire({
+                            position: 'center',
+                            icon: 'success',
+                            title: 'Thêm sản phẩm vào giỏ hàng thành công',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    } else {
+                        Swal.fire({
+                            position: 'center',
+                            icon: 'error',
+                            title: 'Xin lỗi, sản phẩm bạn vừa chọn đang tạm hết hàng',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Lỗi khi thêm sản phẩm vào giỏ hàng:', xhr.responseText);
+                }
+            });
+        }
+
+        // Lọc và tải lại sản phẩm khi chọn bộ lọc
+        $("#select-order-price").change(function () {
+            loadProducts(1, 6);
+        });
+    });
+</script>

@@ -1,0 +1,412 @@
+﻿@{
+    ViewBag.Title = "Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title - Online Shop</title>
+
+    <!-- CSS và JS -->
+    <link href="~/BigShopee/css/bootstrap.css" rel="stylesheet" type="text/css" media="all" />
+    <link rel="stylesheet" href="~/BigShopee/css/etalage.css" type="text/css" media="all" />
+    <link href="~/BigShopee/css/style.css" rel="stylesheet" type="text/css" media="all" />
+
+    <!-- Meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+
+    <!-- Thư viện cần thiết -->
+    <script src="~/new/jquery-3.6.0.min.js"></script>
+
+    <script src="~/new/sweetalert2@10.js"></script>
+    <script src="~/new/jwt-decode.min.js"></script>
+
+    <style>
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            background-color: whitesmoke;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .profile-content {
+            padding: 10px;
+        }
+
+        .title-profile {
+            font-weight: 600;
+        }
+
+        .text-profile {
+            /* Các kiểu tùy chỉnh cho văn bản hiển thị */
+        }
+
+        .input-profile {
+            /* Các kiểu tùy chỉnh cho các input khi chỉnh sửa */
+        }
+
+        .btn-action {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="profile" style="width: 70%; float: right; margin-top: 20px;">
+        <!-- Thông tin cơ bản -->
+        <div class="card mb-3 content profile-info">
+            <div class="profile-content">
+                <i onclick="handleEdit()" style="color:rgba(0, 0, 0, 0.519); float: right; cursor: pointer;" class="fas fa-pen"></i>
+                <h2 class="m-3 pt-3">Thông tin cơ bản</h2>
+                <div class="card-body">
+                    <div style="padding-bottom: 8px;" class="row">
+                        <div class="col-md-3 title-profile">Họ và tên</div>
+                        <div class="col-md-9 text-secondary text-profile" id="displayName"></div>
+                        <div style="display: none;" class="input-profile col-md-9">
+                            <input type="text" class="form-control" id="Ten">
+                        </div>
+                    </div>
+                    <div style="padding-bottom: 8px;" class="row">
+                        <div class="col-md-3 title-profile">Ngày sinh</div>
+                        <div class="col-md-9 text-secondary text-profile" id="displayBirthday"></div>
+                        <div style="display: none;" class="input-profile col-md-9">
+                            <input type="date" class="form-control" id="NgaySinh">
+                        </div>
+                    </div>
+                    <div style="padding-bottom: 8px;" class="row">
+                        <div class="col-md-3 title-profile">Địa chỉ</div>
+                        <div class="col-md-9 text-secondary text-profile" id="displayAddress"></div>
+                        <div style="display: none;" class="input-profile col-md-9">
+                            <input type="text" class="form-control" id="DiaChi">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin liên hệ -->
+        <div class="card mb-3 content profile-info">
+            <div class="profile-content">
+                <h2 class="m-3 pt-3">Thông tin liên hệ</h2>
+                <div style="padding-bottom: 8px;" class="row">
+                    <div class="col-md-3 title-profile">Số điện thoại</div>
+                    <div class="col-md-9 text-secondary text-profile" id="displayPhone"></div>
+                    <div style="display: none;" class="input-profile col-md-9">
+                        <input type="text" class="form-control" id="Sdt">
+                    </div>
+                </div>
+                <div style="padding-bottom: 8px;" class="row">
+                    <div class="col-md-3 title-profile">Email</div>
+                    <div class="col-md-9 text-secondary text-profile" id="displayEmail"></div>
+                    <div style="display: none;" class="input-profile col-md-9">
+                        <input type="email" class="form-control" id="Email">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nút lưu và hủy thay đổi -->
+        <button id="btn-save" onclick="saveProfile()" style="background-color: #357ebd; float: right; display: none;" class="btn btn-primary btn-action">Lưu thay đổi</button>
+        <button onclick="handleCancel()" style="margin-right: 5px; display: none; float: right;" id="btn-cancel" class="btn btn-danger btn-action">Hủy</button>
+    </div>
+
+    <!-- Script -->
+    <script>
+        $(document).ready(function () {
+            // Hàm để kiểm tra và hiển thị phân quyền dựa trên localStorage
+            function checkPermissions() {
+                var token = localStorage.getItem('token');
+                if (!token) {
+                    return;
+                }
+
+                try {
+                    var decodedToken = jwt_decode(token);
+                    var permissions = decodedToken.permissions || [];
+
+                    // Duyệt qua tất cả các phần tử có attribute data-permission
+                    $('[data-permission]').each(function () {
+                        var requiredPermission = $(this).data('permission');
+
+                        if (!permissions.includes(requiredPermission)) {
+                            // Nếu người dùng không có quyền, ẩn phần tử đó
+                            $(this).hide();
+                        } else {
+                            // Nếu người dùng có quyền, hiển thị phần tử đó
+                            $(this).show();
+                        }
+                    });
+
+                } catch (err) {
+                    console.error('Invalid token:', err);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('permissions');
+                    localStorage.removeItem('cartCount');
+                    window.location.href = '/Access/Login';
+                }
+            }
+
+            // Hàm để cập nhật giao diện người dùng dựa trên token và permissions
+            function updateUIBasedOnToken() {
+                var token = localStorage.getItem('token');
+                if (token) {
+                    try {
+                        var decodedToken = jwt_decode(token);                     
+                        var name = decodedToken.email || decodedToken.name || 'User';
+                        $('#userAccount').html('<span> </span>Chào, ' + name);
+
+                        // Hiển thị dropdown khi nhấp vào tên người dùng
+                        $('#userAccount').attr('href', '#');
+                        $('#userAccount').addClass('dropdown-toggle');
+                        $('#userAccount').attr('data-toggle', 'dropdown');
+
+                        // Hiển thị nút Đăng xuất và ẩn các liên kết Đăng nhập/Đăng ký
+                        $('#authLinks').hide();
+                        $('#logoutDiv').show();
+
+                        // Kiểm tra và áp dụng permissions
+                        checkPermissions();
+
+                        // Lấy số lượng sản phẩm trong giỏ hàng từ localStorage
+                        var cartCount = localStorage.getItem('cartCount') || 0;
+                        $('#dot-cart').text(cartCount);
+
+                        // Cập nhật dữ liệu người dùng từ API
+                        loadUserProfile();
+
+                        // Thiết lập ajaxSetup để gửi token tự động với các yêu cầu AJAX
+                        $.ajaxSetup({
+                            beforeSend: function (xhr) {
+                                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                            }
+                        });
+
+                    } catch (err) {
+                        console.error('Invalid token:', err);
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('permissions');
+                        localStorage.removeItem('cartCount');
+                        window.location.href = '/Access/Login';
+                    }
+                } else {
+                    // Người dùng chưa đăng nhập
+                    $('#authLinks').show();
+                    $('#logoutDiv').hide();
+                    $('#userAccount').attr('href', '/Access/Login');
+                    $('#userAccount').html('<span> </span>TÀI KHOẢN');
+
+                    // Giỏ hàng khi chưa đăng nhập
+                    $('#cartLink').attr('href', '/Access/Login');
+                }
+            }
+
+            // Hàm để tải dữ liệu người dùng từ API và hiển thị lên giao diện
+            function loadUserProfile() {
+                var token = localStorage.getItem('token');
+                if (!token) {
+                    return;
+                }
+
+                // Giải mã token để lấy mã tài khoản
+                var decodedToken = jwt_decode(token);
+                var maTaiKhoan = decodedToken.nameid; // Thay "nameid" bằng tên chính xác trong payload của token
+                if (!maTaiKhoan) {
+                    console.error("Không tìm thấy mã tài khoản trong token.");
+                    return;
+                }
+
+                // Gọi API để lấy dữ liệu tài khoản theo mã tài khoản
+                $.ajax({
+                    url: `https://localhost:7248/api/Account/accounts/${maTaiKhoan}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                    },
+                    success: function (user) {
+                        // Gán dữ liệu cho các phần tử giao diện
+                        $("#displayName").text(user.ten || 'Không xác định');
+                        $("#displayBirthday").text(user.ngaySinh ? new Date(user.ngaySinh).toLocaleDateString('vi-VN') : 'Không xác định');
+                        $("#displayAddress").text(user.diaChi || 'Không xác định');
+                        $("#displayPhone").text(user.sdt || 'Không xác định');
+                        $("#displayEmail").text(user.email || 'Không xác định');
+
+                        // Gán dữ liệu cho các input để chỉnh sửa
+                        $("#Ten").val(user.ten || '');
+                        $("#NgaySinh").val(user.ngaySinh ? new Date(user.ngaySinh).toISOString().split('T')[0] : '');
+                        $("#DiaChi").val(user.diaChi || '');
+                        $("#Sdt").val(user.sdt || '');
+                        $("#Email").val(user.email || '');
+                    },
+                    error: function (error) {
+                        console.error("Lỗi khi gọi API tài khoản:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi!',
+                            text: 'Không thể tải thông tin tài khoản.',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
+                });
+            }
+
+            // Hàm để đăng xuất
+            function handleLogout() {
+                Swal.fire({
+                    title: 'Bạn có chắc chắn muốn đăng xuất?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Đăng xuất',
+                    cancelButtonText: 'Hủy',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Xóa token và dữ liệu liên quan khỏi localStorage
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('permissions');
+                        localStorage.removeItem('cartCount');
+                        localStorage.removeItem('userProfile');
+
+                        // Chuyển hướng đến trang đăng nhập
+                        window.location.href = '/Access/Login';
+                    }
+                });
+            }
+
+            // Hàm để chuyển sang chế độ chỉnh sửa
+            function handleEdit() {
+                $('.text-profile').hide();
+                $('.input-profile').show();
+                $('#btn-save').show();
+                $('#btn-cancel').show();
+            }
+
+            // Hàm để hủy bỏ chỉnh sửa
+            function handleCancel() {
+                $('.text-profile').show();
+                $('.input-profile').hide();
+                $('#btn-save').hide();
+                $('#btn-cancel').hide();
+
+                // Tải lại dữ liệu từ API để hủy bỏ các thay đổi
+                loadUserProfile();
+            }
+
+            // Hàm để lưu thông tin profile lên API và cập nhật giao diện
+            function saveProfile() {
+                var token = localStorage.getItem("token");
+                if (!token) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi!',
+                        text: 'Vui lòng đăng nhập để cập nhật thông tin.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    return;
+                }
+
+                // Giải mã token để lấy mã tài khoản
+                var decodedToken = jwt_decode(token);
+                var maTaiKhoan = decodedToken.nameid;
+                if (!maTaiKhoan) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi!',
+                        text: 'Không tìm thấy mã tài khoản trong token.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    return;
+                }
+
+                // Lấy các giá trị từ các phần tử HTML
+                var ten = $("#Ten").val().trim();
+                var ngaySinh = $("#NgaySinh").val();
+                var diaChi = $("#DiaChi").val().trim();
+                var sdt = $("#Sdt").val().trim();
+                var email = $("#Email").val().trim();
+
+                // Kiểm tra hợp lệ dữ liệu
+                if (!ten || !sdt || !email) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Cảnh báo',
+                        text: 'Vui lòng điền đầy đủ các trường bắt buộc.'
+                    });
+                    return;
+                }
+
+                // Tạo đối tượng dữ liệu để gửi lên API
+                var profileData = {
+                    maTaiKhoan: parseInt(maTaiKhoan),
+                    ten: ten,
+                    ngaySinh: ngaySinh || null, // Gửi null nếu không có
+                    diaChi: diaChi,
+                    sdt: sdt,
+                    email: email
+                };
+
+                // Gọi API để cập nhật thông tin tài khoản
+                $.ajax({
+                    url: 'https://localhost:7248/api/HomeControllerAPI/ChangeProfile',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(profileData),
+                    success: function (result) {
+                        if (result.status === true) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công!',
+                                text: 'Cập nhật thông tin tài khoản thành công.',
+                                showConfirmButton: false,
+                                timer: 1500
+                            }).then(() => {
+                                // Cập nhật dữ liệu người dùng trong localStorage nếu cần
+                                // localStorage.setItem('userProfile', JSON.stringify(profileData));
+                                // Tải lại giao diện
+                                loadUserProfile();
+                                handleCancel();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi!',
+                                text: result.message || 'Cập nhật không thành công.',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        }
+                    },
+                    error: function (error) {
+                        console.error('Lỗi khi cập nhật thông tin tài khoản:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi!',
+                            text: 'Không thể kết nối đến server.',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
+                });
+            }
+
+            // Gắn sự kiện cho nút Đăng xuất
+            $('#logoutBtn').on('click', function () {
+                handleLogout();
+            });
+
+            // Gắn các hàm vào window để có thể gọi từ onclick
+            window.handleEdit = handleEdit;
+            window.handleCancel = handleCancel;
+            window.saveProfile = saveProfile;
+
+            // Kiểm tra token và cập nhật UI khi tải trang
+            updateUIBasedOnToken();
+        });
+    </script>
+
+</body>
+</html>

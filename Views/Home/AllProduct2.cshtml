@@ -1,0 +1,218 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    /* Styles for pagination */
+</style>
+
+<div class="shoes-grid">
+    <div class="products" style="margin-top: 28px;">
+        <h5 class="latest-product">TẤT CẢ SẢN PHẨM</h5>
+    </div>
+
+    <div id="productContainer" class="product-left">
+        <!-- Products will be loaded here via AJAX -->
+    </div>
+    <div class="clearfix"></div>
+
+    <!-- Pagination Container -->
+    <nav aria-label="Page navigation example" id="pagination">
+        <ul class="pagination justify-content-end"></ul>
+    </nav>
+</div>
+<script src="~/new/jquery-3.6.0.min.js"></script>
+<script src="~/new/sweetalert2@10.js"></script>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/Access/Login';
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+    }
+
+    function getQueryParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return {
+            pageIndex: urlParams.get('PageIndex') || 1,
+            pageSize: urlParams.get('PageSize') || 6,
+            search: urlParams.get('search') || '',
+            maxPrice: urlParams.get('maxPrice') || "100000000",
+            minPrice: urlParams.get('minPrice') || "0",
+            idCategories: urlParams.get('idCategories') || '',
+            idHangs: urlParams.get('idHangs') || ''
+        };
+    }
+
+    function loadProducts() {
+        const params = getQueryParams();
+        $.ajax({
+            url: `https://localhost:7248/api/HomeControllerAPI/Search?search=${params.search}&idCategories=${params.idCategories}&idHangs=${params.idHangs}&pageIndex=${params.pageIndex}&pageSize=${params.pageSize}&maxPrice=${params.maxPrice}&minPrice=${params.minPrice}&orderPrice=tang`,
+            type: "GET",
+            headers: { "Authorization": `Bearer ${token}` },
+            success: function (response) {
+                $("#productContainer").empty();
+                $("#pagination").empty();
+
+                const totalProducts = response.totalCount;
+                const totalPages = Math.ceil(totalProducts / params.pageSize);
+
+                response.sanpham.forEach(product => {
+                    $("#productContainer").append(`
+                            <div class="col-md-4 chain-grid" style="min-height: 406.29px;">
+                                <a href="/Home/ProductDetail/${product.maSp}">
+                                    <img class="img-responsive chain" src="${product.anh1}" alt="Product Image">
+                                </a>
+                                <span class="star"> </span>
+                                <div class="grid-chain-bottom">
+                                    <h6><a href="/Home/ProductDetail/${product.maSp}">${product.tenSp}</a></h6>
+                                    <div class="star-price">
+                                        <div class="dolor-grid">
+                                            <span class="actual">${formatCurrency(product.giaTien)}</span>
+                                            <br /><span>Đã bán ${product.soLuongDaBan}</span>
+                                        </div>
+                                                       <a class="now-get get-cart"
+       onclick="addItem(${product.maSp}, '${product.tenSp.replace(/'/g, "\\'")}', '${product.anh1.replace(/'/g, "\\'")}', ${product.giaTien})">
+       THÊM VÀO GIỎ
+    </a>
+
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                });
+
+                for (let i = 1; i <= totalPages; i++) {
+                    $("#pagination").append(`
+                            <li class="page-item ${i == params.pageIndex ? 'active' : ''}">
+                                <a class="page-link" onclick="changePage(${i})">${i}</a>
+                            </li>
+                        `);
+                }
+            },
+            error: function (error) {
+                console.error("Error loading products:", error);
+            }
+        });
+    }
+
+    function changePage(pageIndex) {
+        const params = getQueryParams();
+        params.pageIndex = pageIndex;
+
+        const newUrl = `${window.location.pathname}?${$.param(params)}`;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+        loadProducts();
+    }
+
+
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+        // Chỉ hiển thị số lượng nếu khác 0
+        $('#dot-cart').html(totalCount > 0 ? totalCount : '');
+    }
+
+    function addItem(productId, productName, productImage, productPrice) {
+        // Tạo đối tượng dữ liệu để gửi trong body
+        var requestData = {
+            ProductId: productId,
+            CheckOnly: true
+        };
+
+        // Gọi API để kiểm tra trạng thái hàng trước khi thêm
+        $.ajax({
+            url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON
+            data: JSON.stringify(requestData), // Chuyển đổi đối tượng thành chuỗi JSON
+            success: function (response) {
+                if (response.status === true) {
+                    // Nếu sản phẩm còn trong kho, thêm vào localStorage
+                    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                    let existingItem = cart.find(item => item.productId === productId);
+
+                    if (existingItem) {
+                        existingItem.quantity += 1; // Tăng số lượng nếu sản phẩm đã tồn tại
+                    } else {
+                        // Thêm sản phẩm mới vào giỏ hàng
+                        cart.push({
+                            productId: productId,
+                            productName: productName,
+                            productImage: productImage,
+                            productPrice: productPrice,
+                            quantity: 1
+                        });
+                    }
+                    console.log("Updated Cart:", cart);
+                    // Lưu giỏ hàng trở lại vào localStorage
+                    localStorage.setItem('cart', JSON.stringify(cart));
+
+                    // Cập nhật hiển thị số lượng giỏ hàng
+                    updateCartCount();
+
+                    // Thông báo thành công
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'success',
+                        title: 'Thêm sản phẩm vào giỏ hàng thành công',
+                        showConfirmButton: false,
+                        timer: 700
+                    });
+                } else {
+                    // Hiển thị thông báo lỗi nếu sản phẩm hết hàng
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'error',
+                        title: response.message || 'Sản phẩm hiện không còn trong kho.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            },
+            error: function () {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'error',
+                    title: 'Lỗi khi kiểm tra trạng thái sản phẩm',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+        });
+    }
+
+ 
+    function loadCategoriesFromStorage() {
+        const categoriesData = JSON.parse(localStorage.getItem("categoriesData")) || [];
+        const selectedCategories = JSON.parse(localStorage.getItem("selectedCategories")) || [];
+
+        $("#categories-container").empty();
+        categoriesData.forEach(category => {
+            const isChecked = selectedCategories.includes(category.maDanhMuc.toString()) ? 'checked' : '';
+
+            const categoryHtml = `
+                    <div class="form-check col col-sm-6">
+                        <input onclick="ChonDanhMuc2()" class="form-check-input"
+                               type="checkbox" id="category-${category.maDanhMuc}"
+                               name="category" value="${category.maDanhMuc}" ${isChecked}/>
+                        <label class="form-check-label" for="category-${category.maDanhMuc}">
+                            ${category.tenDanhMuc}
+                        </label>
+                    </div>`;
+            $("#categories-container").append(categoryHtml);
+        });
+    }
+
+    $(document).ready(function () {
+        loadProducts();
+        loadCategoriesFromStorage();
+       
+        updateCartCount();
+    });
+</script>
+<script src="~/js/categories.js"></script>

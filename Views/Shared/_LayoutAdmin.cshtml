@@ -1,0 +1,255 @@
+﻿
+@using Microsoft.AspNetCore.Http
+@* Không cần sử dụng Session *@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Các thẻ head -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý cửa hàng</title>
+
+    <!-- Bao gồm các thư viện CSS -->
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="~/Admin/plugins/fontawesome-free/css/all.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Admin/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- JQVMap -->
+    <link rel="stylesheet" href="~/Admin/plugins/jqvmap/jqvmap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="~/Admin/dist/css/adminlte.min.css">
+    <link rel="icon" href="~/Admin/images/logo.png" type="image/png">
+
+    <!-- Bao gồm các thư viện JavaScript -->
+    <!-- jQuery -->
+    <script src="~/new/jquery-3.6.0.min.js"></script>
+    <script src="~/new/jwt-decode.min.js"></script>
+    <script src="~/new/sweetalert2@10.js"></script>
+    <!-- Bootstrap 4 -->
+ 
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        <!-- Preloader -->
+        <div class="preloader flex-column justify-content-center align-items-center">
+            <img class="animation__shake" src="~/BigShopee/images/Logoadmin.png" alt="AdminLTELogo" height="60px" width="60px">
+        </div>
+
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- Left navbar links -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="/Admin/Index" role="button"><i class="fas fa-bars"></i></a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="/Admin/Index" class="nav-link">Home</a>
+                </li>
+            </ul>
+            <!-- Right navbar links -->
+            <ul class="navbar-nav ml-auto">
+                <!-- Notifications Dropdown Menu -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link" data-toggle="dropdown" href="#" id="notificationLink">
+                        <i class="far fa-bell"></i>
+                        <span class="badge badge-warning navbar-badge" id="notificationCount">0</span>
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" id="notificationMenu">
+                        <span class="dropdown-item dropdown-header"><span id="notificationHeader">0</span> đơn hàng cần xử lý</span>
+                        <div class="dropdown-divider"></div>
+                        <!-- Danh sách thông báo sẽ được thêm bằng JavaScript -->
+                        <a href="#" class="dropdown-item dropdown-footer">Xem tất cả thông báo</a>
+                    </div>
+                </li>
+                <!-- Fullscreen -->
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </a>
+                </li>
+                <!-- Logout -->
+                <li class="nav-item">
+                    <button class="btn btn-danger" id="logoutBtn">Đăng xuất</button>
+                </li>
+            </ul>
+        </nav>
+        <!-- /.navbar -->
+        <!-- Main Sidebar Container -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <!-- Brand Logo -->
+            <a href="/Admin/Index" class="brand-link">
+                <img src="~/BigShopee/images/Logoadmin.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+                <span class="brand-text font-weight-light">Quản lý chung</span>
+            </a>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Sidebar user panel -->
+                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                    <div class="image">
+                        <img src="~/Admin/images/1000.jpg" class="img-circle elevation-2" alt="User Image">
+                    </div>
+                    <div class="info">
+                        <a href="#" class="d-block">Xin chào! <span id="userName">Khách</span></a>
+                    </div>
+                </div>
+
+                <!-- Sidebar Menu -->
+                <nav class="mt-2">
+                    <!-- Menu sẽ được đổ vào đây -->
+                    <ul class="nav nav-pills nav-sidebar flex-column" id="mainMenu" data-widget="treeview" role="menu" data-accordion="false">
+                        <!-- Các mục menu sẽ được thêm bằng JavaScript -->
+                    </ul>
+                </nav>
+                <!-- /.sidebar-menu -->
+            </div>
+            <!-- /.sidebar -->
+        </aside>
+
+        <!-- Nội dung chính -->
+        @RenderBody()
+    </div>
+    <!-- ./wrapper -->
+    <!-- Các thư viện JS khác nếu cần -->
+    <!-- jQuery Knob Chart -->
+    <script src="~/Admin/plugins/jquery-knob/jquery.knob.min.js"></script>
+    <!-- daterangepicker -->
+    <script src="~/Admin/plugins/moment/moment.min.js"></script>
+    <script src="~/Admin/plugins/daterangepicker/daterangepicker.js"></script>
+
+    <!-- Script để xử lý hiển thị thông tin người dùng và menu -->
+    <script>
+        $(document).ready(function () {
+            // Lấy token từ localStorage
+            var token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    // Giải mã token
+                    var decodedToken = jwt_decode(token);
+
+                    // Kiểm tra thời gian hết hạn của token
+                    var currentTime = Date.now() / 1000; // Đơn vị giây
+                    if (decodedToken.exp < currentTime) {
+                        // Token đã hết hạn
+                        localStorage.removeItem('token');
+                        window.location.href = window.location.origin + '/Access/Login';
+                        return;
+                    }
+
+                    // Lấy thông tin người dùng
+                    var name = decodedToken['unique_name'] || decodedToken['name'] || decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || decodedToken['email'];
+
+                    // Cập nhật giao diện
+                    $('#userName').text(name);
+
+                    // Thiết lập ajaxSetup
+                    $.ajaxSetup({
+                        beforeSend: function (xhr) {
+                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                        }
+                    });
+
+                    // Lấy vai trò của người dùng
+                    var roles = decodedToken.role
+
+                    var roleArray = [];
+                    if (Array.isArray(roles)) {
+                        roleArray = roles;
+                    } else if (roles) {
+                        roleArray.push(roles);
+                    }
+
+                    // Xây dựng menu dựa trên vai trò
+                    buildMenu(roleArray);
+
+                    // Lấy số lượng đơn hàng cần xử lý
+                    $.ajax({
+                        url: 'https://localhost:7248/api/Order/pending',
+                        method: 'GET',
+                        success: function (response) {
+                            console.log(response);
+                            $('#notificationCount').text(response.length);
+                            $('#notificationHeader').text(response.length + ' đơn hàng cần xử lý');
+
+                            var notificationMenu = $('#notificationMenu');
+                            // Xóa các thông báo cũ
+                            notificationMenu.find('.dropdown-item:not(.dropdown-footer)').remove();
+
+                            response.forEach(function (order) {
+                                var item = `
+                                            <a href="/Admin/QuanLyDH/${order.maDonHang}" class="dropdown-item">
+                                                <i class="fas fa-envelope mr-2"></i> Mã đơn hàng: ${order.maDonHang}
+                                                <span class="float-right text-muted text-sm">Ngày lập: ${order.ngayLap}</span>
+                                            </a>
+                                        `;
+                                notificationMenu.append(item);
+                            });
+                        },
+                        error: function (error) {
+                            console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+                        }
+                    });
+
+                } catch (err) {
+                    console.error('Invalid token:', err);
+                    localStorage.removeItem('token');
+                    window.location.href = window.location.origin + '/Access/Login';
+                }
+            } else {
+                // Nếu không có token, chuyển hướng đến trang đăng nhập
+                window.location.href = window.location.origin + '/Access/Login';
+            }
+
+            // Xử lý đăng xuất
+            $('#logoutBtn').on('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Bạn có chắc chắn muốn đăng xuất?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Đăng xuất',
+                    cancelButtonText: 'Hủy',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Xóa token và chuyển hướng
+                        localStorage.removeItem('token');
+                        window.location.href = window.location.origin + '/Access/Login';
+                    }
+                });
+            });
+        });
+
+        // Hàm xây dựng menu dựa trên vai trò
+        function buildMenu(roles) {
+            var menuItems = [
+                { text: 'Trang chủ', url: '/Admin/Index', icon: 'fas fa-home', roles: [] },
+                { text: 'Quản lý tài khoản', url: '/Admin/QuanLyTK', icon: 'fas fa-user', roles: ['admin'] },
+                { text: 'Quản lý danh mục', url: '/Admin/QuanLyDM', icon: 'fas fa-list', roles: ['admin', 'manager'] },
+                { text: 'Quản lý hãng', url: '/Admin/QuanLyHang', icon: 'fas fa-list', roles: ['admin', 'manager'] },
+                { text: 'Quản lý sản phẩm', url: '/Admin/QuanLySP', icon: 'fas fa-box', roles: ['admin', 'manager'] },
+                { text: 'Quản lý đơn hàng', url: '/Admin/QuanLyDH', icon: 'fas fa-shopping-cart', roles: ['admin', 'sales'] },
+                { text: 'Báo cáo doanh thu', url: '/Admin/Index', icon: 'fas fa-chart-line', roles: ['admin', 'manager'] },
+                // Thêm các mục menu khác nếu cần
+            ];
+
+            var menu = $('#mainMenu');
+            menu.empty(); // Xóa các mục menu cũ nếu cần
+
+            menuItems.forEach(function (item) {
+                if (item.roles.length === 0 || roles.some(r => item.roles.includes(r))) {
+                    var menuItem = `
+                                <li class="nav-item">
+                                    <a href="${item.url}" class="nav-link">
+                                        <i class="nav-icon ${item.icon}"></i>
+                                        <p>${item.text}</p>
+                                    </a>
+                                </li>
+                            `;
+                    menu.append(menuItem);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

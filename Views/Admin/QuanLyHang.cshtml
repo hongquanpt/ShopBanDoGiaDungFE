@@ -1,0 +1,248 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="wrapper">
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+
+
+                        <div class="card">
+                            <div class="card-header">
+                                <label class="card-title">Quản lý hãng sản xuất</label>
+                            </div>
+
+
+                            <!-- /.card-header -->
+                            <div class="card-body">
+
+                                <!-- Bảng hiển thị sản phẩm -->
+                                <table id="brandTable" class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã hãng</th>
+                                            <th>Tên hãng</th>
+                                            <th>Sửa hãng</th>
+                                            <th>Xóa hãng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dữ liệu sẽ được thêm vào bằng JavaScript -->
+                                    </tbody>
+                                </table>       <!-- /.card-body -->
+                            </div>
+                            <!-- /.card-header -->
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+
+                    <button id="addBrandBtn" class="btn btn-primary">Thêm hãng mới</button>
+
+                    <!-- Modal thêm hãng -->
+                    <div id="addBrandModal" style="display: none;">
+                        <div class="modal-content">
+                            <h3>Thêm hãng mới</h3>
+                            <input type="text" id="brandName" placeholder="Nhập tên hãng mới" />
+                            <button id="confirmAddBrand" class="btn btn-success">Thêm hãng</button>
+                            <button id="cancelAddBrand" class="btn btn-secondary">Hủy bỏ</button>
+                        </div>
+                    </div>
+                    <!-- /.col -->
+                </div>
+                <!-- /.row -->
+        </section>
+    </div>
+</div>
+
+
+<!-- Bao gồm thư viện jQuery -->
+<script src="~/new/jquery-3.6.0.min.js"></script>
+
+<!-- Script để gọi API và hiển thị dữ liệu -->
+<script>
+    $(document).ready(function () {
+        // Lấy token từ localStorage
+        var token = localStorage.getItem('token');
+        if (!token) {
+            // Chưa đăng nhập, chuyển hướng đến trang đăng nhập
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token để lấy vai trò
+        var decodedToken = jwt_decode(token);
+        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+        console.log(roles)
+        // Kiểm tra xem người dùng có vai trò 'admin' hoặc 'manager' không
+        var hasAccess = false;
+        if (Array.isArray(roles)) {
+            hasAccess = roles.includes('admin') || roles.includes('manager');
+        } else {
+            hasAccess = roles === 'admin' || roles === 'manager';
+        }
+
+        if (!hasAccess) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/'; // Chuyển hướng đến trang chủ hoặc trang thông báo
+            return;
+        }
+
+        // Thiết lập token cho tất cả các yêu cầu AJAX
+        $.ajaxSetup({
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            }
+        });
+
+        // Gọi API để lấy danh sách hãng
+        function loadBrands(page = 1) {
+            $.ajax({
+                url: `https://localhost:7248/api/Brand/hangs?page=${page}&pageSize=100&_=${new Date().getTime()}`, // Đường dẫn API với tham số tránh cache
+                method: 'GET',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                },
+                success: function (data) {
+                    var dataTable = $('#brandTable').DataTable();
+
+                    // Xóa dữ liệu hiện có trong DataTable mà không phá hủy
+                    dataTable.clear();
+
+                    // Duyệt qua các hãng và thêm dữ liệu vào DataTable
+                    data.data.forEach(function (brand) {
+                        dataTable.row.add([
+                            brand.maHang,
+                            brand.tenHang,
+                            '<button class="btn btn-success edit-brand" data-brand-id="' + brand.maHang + '">Chỉnh sửa</button>',
+                            '<button class="btn btn-danger delete-brand" data-brand-id="' + brand.maHang + '">Xóa</button>'
+                        ]);
+                    });
+
+                    // Vẽ lại bảng với dữ liệu mới
+                    dataTable.draw();
+                },
+                error: function (error) {
+                    console.error('Lỗi khi lấy danh sách hãng:', error);
+                }
+            });
+        }
+
+        // Khởi tạo DataTable lần đầu
+        $(document).ready(function () {
+            $('#brandTable').DataTable({
+                "paging": true,
+                "ordering": true,
+                "info": true,
+                "searching": true,
+                "language": {
+                    "paginate": {
+                        "next": "Trang sau",
+                        "previous": "Trang trước"
+                    },
+                    "info": "Hiển thị từ _START_ đến _END_ của _TOTAL_ hãng sản xuất",
+                    "search": "Tìm kiếm:"
+                }
+            });
+
+            // Tải danh sách hãng khi trang được tải
+            loadBrands();
+        });
+
+
+        // Hiển thị modal thêm hãng
+        $('#addBrandBtn').on('click', function () {
+            $('#addBrandModal').show();
+        });
+
+        // Xử lý thêm hãng
+        $('#confirmAddBrand').on('click', function () {
+            var brandName = $('#brandName').val().trim();
+
+            if (brandName === '') {
+                alert('Vui lòng nhập tên hãng.');
+                return;
+            }
+
+            $.ajax({
+                url: 'https://localhost:7248/api/Brand/hangs',
+                method: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                },
+                data: JSON.stringify(brandName), // Gửi chuỗi brandName trực tiếp
+
+                success: function () {
+                    alert('Thêm hãng thành công.');
+                    $('#addBrandModal').hide();
+                    $('#brandName').val('');
+                    loadBrands();
+                },
+                error: function (error) {
+                    console.error('Lỗi khi thêm hãng:', error.responseJSON);
+                    alert('Không thể thêm hãng: ' + JSON.stringify(error.responseJSON));
+                }
+            });
+        });
+
+
+
+        // Hủy thêm hãng
+        $('#cancelAddBrand').on('click', function () {
+            $('#addBrandModal').hide();
+            $('#brandName').val('');
+        });
+
+        // Xử lý xóa hãng
+        $('#brandTable').on('click', '.delete-brand', function () {
+            var brandId = $(this).data('brand-id');
+
+            if (confirm('Bạn có chắc chắn muốn xóa hãng này?')) {
+                $.ajax({
+                    url: 'https://localhost:7248/api/Brand/hangs/' + brandId,
+                    method: 'DELETE',
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                    },
+                    success: function () {
+                        alert('Xóa hãng thành công.');
+                        loadBrands();
+                    },
+                    error: function (error) {
+                        console.error('Lỗi khi xóa hãng:', error);
+                        alert('Không thể xóa hãng.');
+                    }
+                });
+            }
+        });
+
+        // Xử lý sửa hãng
+        $('#brandTable').on('click', '.edit-brand', function () {
+            var brandId = $(this).data('brand-id');
+            // Chuyển đến trang chỉnh sửa hoặc mở modal chỉnh sửa
+            window.location.href = '/Admin/SuaHang/' + brandId;
+        });
+    });
+</script>
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- DataTables & Plugins -->
+<link rel="stylesheet" href="~/Admin/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="~/Admin/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+<script src="~/Admin/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="~/Admin/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+
+<script src="~/Admin/dist/js/adminlte.min.js"></script>

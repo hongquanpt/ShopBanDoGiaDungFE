@@ -1,0 +1,322 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<!-- End of Topbar -->
+<!-- Begin Page Content -->
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- left column -->
+                <div class="col-md-12">
+                    <!-- general form elements -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Cập nhật thông tin sản phẩm</h3>
+                        </div>
+                        <!-- /.card-header -->
+                        <!-- form start -->
+                        <form id="updateProductForm" class="was-validated" method="post" action="/Admin/SuaSP" enctype="multipart/form-data">
+                            <div class="card-body">
+                                <input type="hidden" name="MaSP" id="productId" />
+
+                                <div class="form-group">
+                                    <label for="productName">Tên sản phẩm:</label>
+                                    <input type="text" class="form-control" id="productName" name="TenSP" required>
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="description">Mô tả sản phẩm:</label>
+                                    <input type="text" class="form-control" id="description" name="MoTa" required>
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                </div>
+
+                                <!-- Image 1 -->
+                                <div class="form-group">
+                                    <label for="image1">Ảnh 1:</label>
+                                    <input type="file" class="form-control" name="image1" id="image1">
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                    <input type="hidden" name="Anh1" />
+                                    <img id="currentImage1" class="img-responsive chain" style="width:20%" src="" alt=" ">
+                                    <img id="preview1" class="img-responsive chain" style="width:20%; display:none" src="#" alt=" ">
+                                </div>
+
+                                <!-- Image 2 -->
+                                <div class="form-group">
+                                    <label for="image2">Ảnh 2:</label>
+                                    <input type="file" class="form-control" name="image2" id="image2">
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                    <input type="hidden" name="Anh2" />
+                                    <img id="currentImage2" class="img-responsive chain" style="width:20%" src="" alt=" ">
+                                    <img id="preview2" class="img-responsive chain" style="width:20%; display:none" src="#" alt=" ">
+                                </div>
+
+                                <!-- Image 3 -->
+                                <div class="form-group">
+                                    <label for="image3">Ảnh 3:</label>
+                                    <input type="file" class="form-control" name="image3" id="image3">
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                    <input type="hidden" name="Anh3" />
+                                    <img id="currentImage3" class="img-responsive chain" style="width:20%" src="" alt=" ">
+                                    <img id="preview3" class="img-responsive chain" style="width:20%; display:none" src="#" alt=" ">
+                                </div>
+
+                                <!-- Image 4 -->
+                                <div class="form-group">
+                                    <label for="image4">Ảnh 4:</label>
+                                    <input type="file" class="form-control" name="image4" id="image4">
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                    <input type="hidden" name="Anh4" />
+                                    <img id="currentImage4" class="img-responsive chain" style="width:20%" src="" alt=" ">
+                                    <img id="preview4" class="img-responsive chain" style="width:20%; display:none" src="#" alt=" ">
+                                </div>
+
+                                <!-- Image 5 -->
+                                <div class="form-group">
+                                    <label for="image5">Ảnh 5:</label>
+                                    <input type="file" class="form-control" name="image5" id="image5">
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                    <input type="hidden" name="Anh5" />
+                                    <img id="currentImage5" class="img-responsive chain" style="width:20%" src="" alt=" ">
+                                    <img id="preview5" class="img-responsive chain" style="width:20%; display:none" src="#" alt=" ">
+                                </div>
+
+                                <!-- Image 6 -->
+                                <div class="form-group">
+                                    <label for="image6">Ảnh 6:</label>
+                                    <input type="file" class="form-control" name="image6" id="image6">
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                    <input type="hidden" name="Anh6" />
+                                    <img id="currentImage6" class="img-responsive chain" style="width:20%" src="" alt=" ">
+                                    <img id="preview6" class="img-responsive chain" style="width:20%; display:none" src="#" alt=" ">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="quantitySold">Số lượng đã bán:</label>
+                                    <input type="number" class="form-control" id="quantitySold" name="SoLuongDaBan" required>
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="quantityStock">Số lượng trong kho:</label>
+                                    <input type="number" class="form-control" id="quantityStock" name="SoLuongTrongKho" required>
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="price">Giá tiền:</label>
+                                    <input type="number" class="form-control" id="price" name="GiaTien" required>
+                                    <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="category">Danh mục:</label>
+                                    <select id="category" class="form-control" name="DanhMuc" required>
+                                        <option value="">Chọn danh mục</option>
+                                    </select>
+                                    <div class="invalid-feedback">Vui lòng chọn danh mục.</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="brand">Hãng sản xuất:</label>
+                                    <select id="brand" class="form-control" name="Hang" required>
+                                        <option value="">Chọn hãng sản xuất</option>
+                                    </select>
+                                    <div class="invalid-feedback">Vui lòng chọn hãng sản xuất.</div>
+                                </div>
+
+                            </div>
+                            <!-- /.card-body -->
+
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-primary">Cập nhật</button>
+                                <button type="button" class="btn btn-default" id="cancel">Hủy bỏ</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- /.card -->
+                </div>
+                <!-- /.col-md-12 -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container-fluid -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+<!-- Scripts -->
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="~/Admin/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Gắn sự kiện cho nút Hủy bỏ
+        $('#cancel').on('click', function () {
+            window.location = '@Url.Action("QuanLySP", "Admin")';
+        });
+
+        var token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token và kiểm tra quyền truy cập
+        var decodedToken = jwt_decode(token);
+        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+        var canEdit = Array.isArray(roles) ? roles.includes('admin') || roles.includes('category_manager') : roles === 'admin' || roles === 'category_manager';
+
+        if (!canEdit) {
+            $('#addCategoryBtn').hide();
+        }
+
+        // Thiết lập token cho tất cả các yêu cầu AJAX
+        $.ajaxSetup({
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            }
+        });
+
+        // Lấy productId từ URL
+        var pathArray = window.location.pathname.split('/');
+        var productId = pathArray[pathArray.length - 1];
+
+        // Gọi API để lấy danh sách danh mục sản phẩm và điền vào select #category
+        $.ajax({
+            url: 'https://localhost:7248/api/Category/danhmucs',
+            method: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                console.log("dm", data)
+                data.data.forEach(function (category) {
+                    $('#category').append(new Option(category.tenDanhMuc, category.maDanhMuc));
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error('Lỗi khi lấy danh sách danh mục:', xhr.responseText);
+                alert('Không thể tải danh sách danh mục.');
+            }
+        });
+
+        // Gọi API để lấy danh sách hãng sản xuất và điền vào select #brand
+        $.ajax({
+            url: 'https://localhost:7248/api/Brand/hangs',
+            method: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                console.log("hang", data)
+                data.data.forEach(function (brand) {
+                    $('#brand').append(new Option(brand.tenHang, brand.maHang));
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error('Lỗi khi lấy danh sách hãng sản xuất:', xhr.responseText);
+                alert('Không thể tải danh sách hãng sản xuất.');
+            }
+        });
+        console.log("xxx", productId);
+
+        // Gọi API để lấy thông tin sản phẩm
+        $.ajax({
+            url: `https://localhost:7248/api/HomeControllerAPI/ProductDetail/${productId}`,
+            method: 'GET',
+            dataType: 'json',
+
+            success: function (data) {
+                console.log("sp", data)
+                // Điền dữ liệu sản phẩm vào các trường form
+                $('#productId').val(data.sanpham.maSp);
+                $('#productName').val(data.sanpham.tenSp);
+                $('#category').val(data.sanpham.maDM); // Gán giá trị danh mục
+                $('#brand').val(data.sanpham.maH);       // Gán giá trị hãng sản xuất
+                $('#description').val(data.sanpham.moTa);
+                $('#price').val(data.sanpham.giaTien);
+                $('#quantitySold').val(data.sanpham.soLuongDaBan);
+                $('#quantityStock').val(data.sanpham.soLuongTrongKho);
+
+                // Thiết lập src cho ảnh hiện tại
+                $('#currentImage1').attr('src', `${data.sanpham.anh1}`).show();
+                $('#currentImage2').attr('src', `${data.sanpham.anh2}`).show();
+                $('#currentImage3').attr('src', `${data.sanpham.anh3}`).show();
+                $('#currentImage4').attr('src', `${data.sanpham.anh4}`).show();
+                $('#currentImage5').attr('src', `${data.sanpham.anh5}`).show();
+                $('#currentImage6').attr('src', `${data.sanpham.anh6}`).show();
+
+                // Tiếp tục cho các ảnh khác tương tự
+            },
+            error: function (xhr, status, error) {
+                console.error('Lỗi khi lấy thông tin sản phẩm:', xhr.responseText);
+                alert('Không thể tải thông tin sản phẩm. Vui lòng thử lại sau.');
+                window.location = '@Url.Action("QuanLySP", "Admin")';
+            }
+        });
+
+        // Xử lý sự kiện thay đổi của input ảnh để hiển thị ảnh xem trước
+        function readURL(input, previewId) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $(previewId).attr('src', e.target.result);
+                    $(previewId).show();
+                }
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        $('#image1').change(function () {
+            readURL(this, '#preview1');
+        });
+        $('#image2').change(function () {
+            readURL(this, '#preview2');
+        });
+        $('#image3').change(function () {
+            readURL(this, '#preview3');
+        });
+        $('#image4').change(function () {
+            readURL(this, '#preview4');
+        });
+        $('#image5').change(function () {
+            readURL(this, '#preview5');
+        });
+        $('#image6').change(function () {
+            readURL(this, '#preview6');
+        });
+
+        // Xử lý sự kiện submit của form cập nhật sản phẩm
+        $('#updateProductForm').on('submit', function (event) {
+            event.preventDefault();
+       
+            var formData = new FormData(this);
+            // Gửi yêu cầu PUT để cập nhật sản phẩm
+            $.ajax({
+                url: `https://localhost:7248/api/Product/SuaSP`,
+                method: 'PUT',
+                data: formData,
+                contentType: false,
+                processData: false,
+                beforeSend: function (xhr) {
+                    var token = localStorage.getItem('token');
+                    if (token) {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                    }
+                },
+                success: function () {
+                    alert('Cập nhật sản phẩm thành công.');
+                    window.location = '@Url.Action("QuanLySP", "Admin")';
+                },
+                error: function (xhr, status, error) {
+                    console.error('Lỗi khi cập nhật sản phẩm:', xhr.responseText);
+                    alert('Không thể cập nhật sản phẩm. Vui lòng thử lại.');
+                    window.location = '@Url.Action("QuanLySP", "Admin")';
+                }
+            });
+        });
+    });
+</script>

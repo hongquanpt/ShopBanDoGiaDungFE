@@ -1,0 +1,203 @@
+﻿@{
+    ViewBag.Title = "Quản lý sản phẩm";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="wrapper">
+
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+
+
+                        <div class="card">
+                            <div class="card-header">
+                                <label class="card-title">Quản lý sản phẩm</label>
+                            </div>
+
+
+                            <!-- /.card-header -->
+                            <div class="card-body">
+
+                                <!-- Bảng hiển thị sản phẩm -->
+                                <table id="productTable" class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Tên sản phẩm</th>
+                                            <th>Ảnh sản phẩm</th>
+                                            <th>Hãng sản xuất</th>
+                                            <th>Danh mục sản phẩm</th>
+                                            <th>Giá bán</th>
+                                            <th>Số lượng đã bán</th>
+                                            <th>Số lượng còn lại</th>
+                                            <th>Sửa sản phẩm</th>
+                                            <th>Xóa sản phẩm</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dữ liệu sẽ được thêm vào bằng JavaScript -->
+                                    </tbody>
+                                </table>                             <!-- /.card-body -->
+                            </div>
+                            <!-- /.card-header -->
+                            <!-- /.card-body -->
+                        </div>
+                        <!-- /.card -->
+                    </div>
+                    <!-- Nút thêm sản phẩm mới -->
+                    <button id="addProductBtn" class="btn btn-success">Thêm sản phẩm mới</button>
+                    <!-- /.col -->
+                </div>
+                <!-- /.row -->
+        </section>
+    </div>
+</div>
+
+
+
+<!-- Thêm các thư viện JavaScript cần thiết -->
+
+<script src="~/new/jwt-decode.min.js"></script>
+
+
+
+<script>
+    $(document).ready(function () {
+        // Lấy token từ localStorage
+        var token = localStorage.getItem('token');
+        if (!token) {
+            // Chưa đăng nhập, chuyển hướng đến trang đăng nhập
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token để lấy vai trò
+        var decodedToken = jwt_decode(token);
+        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+        console.log(roles)
+        // Kiểm tra xem người dùng có vai trò 'admin' hoặc 'manager' không
+        var hasAccess = false;
+        if (Array.isArray(roles)) {
+            hasAccess = roles.includes('admin') || roles.includes('manager');
+        } else {
+            hasAccess = roles === 'admin' || roles === 'manager';
+        }
+
+        if (!hasAccess) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/'; // Chuyển hướng đến trang chủ hoặc trang thông báo
+            return;
+        }
+
+        // Thiết lập token cho tất cả các yêu cầu AJAX
+        $.ajaxSetup({
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            }
+        });
+
+        // Gọi API để lấy danh sách sản phẩm
+        function loadProducts() {
+            $.ajax({
+                url: 'https://localhost:7248/api/Product/QuanLySP', // Thay thế bằng URL API của bạn
+                method: 'GET',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                },
+                success: function (data) {
+                    var tbody = $('#productTable tbody');
+                    tbody.empty();
+                     console.log(data.sanpham);
+
+                    // Kiểm tra xem dữ liệu trả về có tồn tại và có mảng sản phẩm không
+                    
+                        data.sanpham.forEach(function (item) {
+
+                       
+                            var row = '<tr>' +
+                            '<td><a href="/Home/ProductDetail/' + item.maSp + '">' + item.tenSp + '</a></td>' +
+                                '<td><img src="' + item.anh1 + '" style="max-width: 100%;" /></td>' +
+                                '<td>' + item.hang + '</td>' +
+                                '<td>' + item.danhMuc + '</td>' +
+                                '<td>' + (item.giaTien ? item.giaTien.toLocaleString() : 'N/A') + '</td>' +
+                                '<td>' + (item.soLuongDaBan || 0) + '</td>' +
+                                '<td>' + (item.soLuongTrongKho || 0) + '</td>' +
+                                '<td><a href="/Admin/SuaSP/' + item.maSp + '" class="btn btn-success">Chỉnh sửa</a></td>' +
+                                '<td><button class="btn btn-danger delete-product" data-id="' + item.maSp + '">Xóa</button></td>' +
+                                '</tr>';
+                            tbody.append(row);
+                        });
+
+                        // Khởi tạo hoặc cập nhật DataTable
+                        if ($.fn.DataTable.isDataTable('#productTable')) {
+                            $('#productTable').DataTable().destroy();
+                        }
+                    $('#productTable').DataTable({
+                        "paging": true,
+                        "ordering": true,
+                        "info": true,
+                        "searching": true,
+                        "language": {
+                            "paginate": {
+                                "next": "Trang sau",
+                                "previous": "Trang trước"
+                            },
+                            "info": "Hiển thị từ _START_ đến _END_ của _TOTAL_ sản phẩm",
+                            "search": "Tìm kiếm:"
+                        }
+                    });
+                   
+                },
+                error: function (error) {
+                    console.error('Lỗi khi lấy danh sách sản phẩm:', error);
+                }
+            });
+        }
+
+        // Tải danh sách sản phẩm khi trang được tải
+        loadProducts();
+
+        // Xử lý sự kiện xóa sản phẩm
+        $('#productTable').on('click', '.delete-product', function () {
+            var productId = $(this).data('id');
+
+            if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                $.ajax({
+                    url: 'https://localhost:7248/api/Product/XoaSP/' + productId,
+                    method: 'DELETE',
+                    success: function () {
+                        alert('Xóa sản phẩm thành công');
+                        loadProducts();
+                    },
+                    error: function (error) {
+                        console.error('Lỗi khi xóa sản phẩm:', error);
+                        alert('Không thể xóa sản phẩm');
+                    }
+                });
+            }
+        });
+
+        // Xử lý sự kiện thêm sản phẩm mới
+        $('#addProductBtn').on('click', function () {
+            window.location.href = '/Admin/ThemSP';
+        });
+    });
+</script>
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- DataTables & Plugins -->
+<link rel="stylesheet" href="~/Admin/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="~/Admin/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+<script src="~/Admin/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="~/Admin/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+
+<script src="~/Admin/dist/js/adminlte.min.js"></script>

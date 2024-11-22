@@ -1,0 +1,184 @@
+﻿@{
+
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Thêm thông tin sản phẩm</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Form thêm sản phẩm -->
+            <form id="addProductForm" method="POST" class="was-validated" enctype="multipart/form-data">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="uname">Tên sản phẩm:</label>
+                        <input type="text" class="form-control" id="uname" placeholder="Nhập tên sản phẩm" name="TenSP" required>
+                        <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Mô tả sản phẩm:</label>
+                        <input type="text" class="form-control" id="description" placeholder="Nhập mô tả sản phẩm" name="MoTa" required>
+                        <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                    </div>
+
+                    @for (int i = 1; i <= 6; i++)
+                    {
+                        <div class="form-group">
+                            <label for="image@(i)">Ảnh @(i):</label>
+                            <input type="file" class="form-control" name="images" id="image@(i)" required>
+                            <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                            <img id="preview@(i)" class="img-responsive chain" style="width: 20%; display: none" src="#" alt="Ảnh @(i)">
+                        </div>
+                    }
+
+
+
+
+                    <!-- Các trường số lượng, giá tiền -->
+                    <div class="form-group">
+                        <label for="quantity">Số lượng nhập:</label>
+                        <input type="number" class="form-control" id="quantity" placeholder="Nhập số lượng" name="SoLuongTrongKho" required>
+                        <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Giá tiền:</label>
+                        <input type="number" class="form-control" id="price" placeholder="Nhập giá tiền" name="GiaTien" required>
+                        <div class="invalid-feedback">Vui lòng điền vào trường này.</div>
+                    </div>
+
+                    <!-- Dropdown cho danh mục sản phẩm -->
+                    <div class="form-group">
+                        <label for="category">Danh mục:</label>
+                        <select id="category" class="form-control" name="DanhMuc" required>
+                            <option value="" style="display:none">Chọn danh mục</option>
+                        </select>
+                        <div class="invalid-feedback">Vui lòng chọn danh mục.</div>
+                    </div>
+
+                    <!-- Dropdown cho hãng sản xuất -->
+                    <div class="form-group">
+                        <label for="brand">Hãng sản xuất:</label>
+                        <select id="brand" class="form-control" name="Hang" required>
+                            <option value="" style="display:none">Chọn hãng sản xuất</option>
+                        </select>
+                        <div class="invalid-feedback">Vui lòng chọn hãng sản xuất.</div>
+                    </div>
+
+                    <!-- Các nút điều khiển -->
+                    <button type="submit" class="btn btn-primary">Thêm mới</button>
+                    <button type="button" class="btn btn-default" id="cancel">Hủy bỏ</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="~/Admin/dist/js/adminlte.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Hiển thị xem trước hình ảnh khi chọn file
+        for (let i = 1; i <= 6; i++) {
+            $(`#image${i}`).on('change', function (event) {
+                const [file] = event.target.files;
+                if (file) {
+                    $(`#preview${i}`).attr('src', URL.createObjectURL(file)).show();
+                }
+            });
+        }
+
+        // Gọi API để lấy danh sách danh mục sản phẩm và điền vào select #category
+        $.ajax({
+            url: 'https://localhost:7248/api/Category/danhmucs',
+            method: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                console.log(data);
+                data.data.forEach(function (category) {
+                    $('#category').append(new Option(category.tenDanhMuc, category.maDanhMuc));
+                });
+            },
+            error: function (xhr) {
+                console.error('Lỗi khi lấy danh sách danh mục:', xhr.responseText);
+                alert('Không thể tải danh sách danh mục.');
+            }
+        });
+
+        // Gọi API để lấy danh sách hãng sản xuất và điền vào select #brand
+        $.ajax({
+            url: 'https://localhost:7248/api/Brand/hangs',
+            method: 'GET',
+            dataType: 'json',
+            success: function (data) {
+                console.log(data);
+                data.data.forEach(function (brand) {
+                    $('#brand').append(new Option(brand.tenHang, brand.maHang));
+                });
+            },
+            error: function (xhr) {
+                console.error('Lỗi khi lấy danh sách hãng sản xuất:', xhr.responseText);
+                alert('Không thể tải danh sách hãng sản xuất.');
+            }
+        });
+
+        // Xử lý sự kiện submit của form
+        $('#addProductForm').on('submit', function (e) {
+            e.preventDefault();
+
+            var formData = new FormData();
+            // Thêm các trường dữ liệu khác vào formData
+            formData.append('TenSP', $('#uname').val());
+            formData.append('MoTa', $('#description').val());
+            formData.append('SoLuongTrongKho', $('#quantity').val());
+            formData.append('GiaTien', $('#price').val());
+            formData.append('DanhMuc', $('#category').val());
+            formData.append('Hang', $('#brand').val());
+
+            // Thêm các tệp ảnh vào formData
+            for (let i = 1; i <= 6; i++) {
+                var imageInput = document.getElementById(`image${i}`);
+                console.log(`imageInput for image${i}:`, imageInput);
+                if (imageInput && imageInput.files.length > 0) {
+                    formData.append('images', imageInput.files[0]);
+                    console.log(`Image ${i}:`, imageInput.files[0]);
+                }
+            }
+
+
+            // Kiểm tra dữ liệu formData
+            console.log("DanhMuc:", formData.get("DanhMuc"));
+            console.log("Hang:", formData.get("Hang"));
+            console.log("Images:", formData.getAll("images"));
+            $.ajax({
+                url: 'https://localhost:7248/api/Product/ThemSP',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function () {
+                    alert('Thêm sản phẩm thành công!');
+                    // window.location.href = '@Url.Action("QuanLySP", "Admin")';
+                },
+                error: function (xhr) {
+                    console.error('Lỗi khi thêm sản phẩm:', xhr.responseText);
+                    alert('Không thể thêm sản phẩm.');
+                }
+            });
+        });
+
+        // Xử lý sự kiện hủy bỏ
+        $('#cancel').on('click', function () {
+            window.location.href = '@Url.Action("QuanLySP", "Admin")';
+        });
+    });
+</script>
