@@ -162,7 +162,7 @@
                     }
 
                     // Xây dựng menu dựa trên vai trò
-                    buildMenu(roleArray);
+                    buildMenu(decodedToken);
 
                     // Lấy số lượng đơn hàng cần xử lý
                     $.ajax({
@@ -221,35 +221,40 @@
         });
 
         // Hàm xây dựng menu dựa trên vai trò
-        function buildMenu(roles) {
+        function buildMenu(token) {
+            
             var menuItems = [
-                { text: 'Trang chủ', url: '/Admin/Index', icon: 'fas fa-home', roles: [] },
-                { text: 'Quản lý tài khoản', url: '/Admin/QuanLyTK', icon: 'fas fa-user', roles: ['admin'] },
-                { text: 'Quản lý danh mục', url: '/Admin/QuanLyDM', icon: 'fas fa-list', roles: ['admin', 'manager'] },
-                { text: 'Quản lý hãng', url: '/Admin/QuanLyHang', icon: 'fas fa-list', roles: ['admin', 'manager'] },
-                { text: 'Quản lý sản phẩm', url: '/Admin/QuanLySP', icon: 'fas fa-box', roles: ['admin', 'manager'] },
-                { text: 'Quản lý đơn hàng', url: '/Admin/QuanLyDH', icon: 'fas fa-shopping-cart', roles: ['admin', 'sales'] },
-                { text: 'Báo cáo doanh thu', url: '/Admin/Index', icon: 'fas fa-chart-line', roles: ['admin', 'manager'] },
+                { text: 'Trang chủ', url: '/Admin/Index', icon: 'fas fa-home', permission: null },
+                { text: 'Quản lý tài khoản', url: '/Admin/QuanLyTK', icon: 'fas fa-user', permission: 'QuanLyTaiKhoan:Xem' },
+                { text: 'Quản lý danh mục', url: '/Admin/QuanLyDM', icon: 'fas fa-list', permission: 'QuanLyDanhMuc:Xem' },
+                { text: 'Quản lý hãng', url: '/Admin/QuanLyHang', icon: 'fas fa-list', permission: 'QuanLyHang:Xem' },
+                { text: 'Quản lý sản phẩm', url: '/Admin/QuanLySP', icon: 'fas fa-box', permission: 'QuanLySanPham:Xem' },
+                { text: 'Quản lý đơn hàng', url: '/Admin/QuanLyDH', icon: 'fas fa-shopping-cart', permission: 'QuanLyDonHang:Xem' },
+                { text: 'Báo cáo doanh thu', url: '/Admin/BaoCao', icon: 'fas fa-chart-line', permission: 'ThongKe:Xem' },
                 // Thêm các mục menu khác nếu cần
             ];
 
             var menu = $('#mainMenu');
             menu.empty(); // Xóa các mục menu cũ nếu cần
 
+            var permissions = token.permissions || []; // Lấy danh sách quyền từ token
+
             menuItems.forEach(function (item) {
-                if (item.roles.length === 0 || roles.some(r => item.roles.includes(r))) {
+                // Nếu mục không yêu cầu quyền (permission === null) hoặc người dùng có quyền tương ứng
+                if (!item.permission || permissions.includes(item.permission)) {
                     var menuItem = `
-                                <li class="nav-item">
-                                    <a href="${item.url}" class="nav-link">
-                                        <i class="nav-icon ${item.icon}"></i>
-                                        <p>${item.text}</p>
-                                    </a>
-                                </li>
-                            `;
+                        <li class="nav-item">
+                            <a href="${item.url}" class="nav-link">
+                                <i class="nav-icon ${item.icon}"></i>
+                                <p>${item.text}</p>
+                            </a>
+                        </li>
+                    `;
                     menu.append(menuItem);
                 }
             });
         }
+
     </script>
 </body>
 </html>

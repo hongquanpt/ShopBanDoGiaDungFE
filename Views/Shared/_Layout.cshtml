@@ -210,13 +210,14 @@
                 var decodedToken = jwt_decode(token);
                 console.log(decodedToken);
                 var permissions = decodedToken.permissions || [];
-                if (permissions.includes('QuanLyTaiKhoan:Xem')) {
+                if (['QuanLyTaiKhoan:Xem', 'QuanLyDanhMuc:Xem', 'QuanLySanPham:Xem', 'QuanLyHang:Xem', 'QuanLyDonHang:Xem', 'ThongKe:Xem'].some(permission => permissions.includes(permission))) {
                     $('#adminLink').show();
                     $('#adminLinkFooter').show();
                 } else {
                     $('#adminLink').hide();
                     $('#adminLinkFooter').hide();
                 }
+
                              
             }
 

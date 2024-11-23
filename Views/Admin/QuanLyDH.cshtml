@@ -178,20 +178,28 @@
 
         // Giải mã token để lấy vai trò
         var decodedToken = jwt_decode(token);
-        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+        var permissions = decodedToken.permissions || [];
+        var canView = permissions.includes("QuanLyDonHang:Xem");
+        var canAdd = permissions.includes("QuanLyDonHang:Them");
+        var canEdit = permissions.includes("QuanLyDonHang:Sua");
+        var canDelete = permissions.includes("QuanLyDonHang:Xoa");
 
-        // Kiểm tra quyền truy cập
-        var hasAccess = false;
-        if (Array.isArray(roles)) {
-            hasAccess = roles.includes('admin') || roles.includes('sales');
-        } else {
-            hasAccess = roles === 'admin' || roles === 'sales';
-        }
-
-        if (!hasAccess) {
+        // Kiểm tra quyền xem
+        if (!canView) {
             alert('Bạn không có quyền truy cập trang này.');
             window.location.href = '/';
             return;
+        }
+
+        // Ẩn các cột hành động nếu không có quyền
+        if (!canEdit) {
+            $('.confirm-column').hide();
+        }
+        if (!canAdd) {
+            $('.complete-column').hide();
+        }
+        if (!canDelete) {
+            $('.cancel-column').hide();
         }
 
         // Thiết lập token cho tất cả các yêu cầu AJAX

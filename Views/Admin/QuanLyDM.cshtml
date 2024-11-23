@@ -18,8 +18,8 @@
                                         <tr>
                                             <th>Mã danh mục</th>
                                             <th>Tên danh mục</th>
-                                            <th>Sửa danh mục</th>
-                                            <th>Xóa danh mục</th>
+                                            <th class="edit-column">Sửa danh mục</th>
+                                            <th class="delete-column">Xóa danh mục</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -58,21 +58,31 @@
             return;
         }
 
-        // Giải mã token và kiểm tra quyền truy cập
+        // Giải mã token và lấy danh sách quyền
         var decodedToken = jwt_decode(token);
-        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
-        var canEdit = Array.isArray(roles) ? roles.includes('admin') || roles.includes('category_manager') : roles === 'admin' || roles === 'category_manager';
+        var permissions = decodedToken.permissions || [];
+        var canView = permissions.includes("QuanLyDanhMuc:Xem");
+        var canAdd = permissions.includes("QuanLyDanhMuc:Them");
+        var canEdit = permissions.includes("QuanLyDanhMuc:Sua");
+        var canDelete = permissions.includes("QuanLyDanhMuc:Xoa");
 
-        if (!canEdit) {
-            $('#addCategoryBtn').hide();
+        // Nếu không có quyền xem, chuyển hướng ra trang chủ
+        if (!canView) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/';
+            return;
         }
 
-        // Thiết lập token cho tất cả các yêu cầu AJAX
-        $.ajaxSetup({
-            beforeSend: function (xhr) {
-                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            }
-        });
+        // Ẩn các nút hoặc cột không có quyền
+        if (!canAdd) {
+            $('#addCategoryBtn').hide();
+        }
+        if (!canEdit) {
+            $('.edit-column').hide();
+        }
+        if (!canDelete) {
+            $('.delete-column').hide();
+        }
 
         // Hàm tải danh sách danh mục
         function loadCategories(page = 1) {
@@ -82,20 +92,19 @@
                 dataType: 'json',
                 success: function (data) {
                     var dataTable = $('#categoryTable').DataTable();
-                    dataTable.clear(); // Xóa dữ liệu hiện có trong bảng
+                    dataTable.clear();
 
-                    // Duyệt qua các danh mục và thêm vào bảng
+                    // Thêm dữ liệu vào bảng
                     data.data.forEach(function (category) {
                         var row = [
                             category.maDanhMuc,
                             category.tenDanhMuc,
                             canEdit ? '<button class="btn btn-success edit-category" data-category-id="' + category.maDanhMuc + '">Chỉnh sửa</button>' : '',
-                            canEdit ? '<button class="btn btn-danger delete-category" data-category-id="' + category.maDanhMuc + '">Xóa</button>' : ''
+                            canDelete ? '<button class="btn btn-danger delete-category" data-category-id="' + category.maDanhMuc + '">Xóa</button>' : ''
                         ];
                         dataTable.row.add(row);
                     });
 
-                    // Vẽ lại bảng
                     dataTable.draw();
                 },
                 error: function (error) {
@@ -104,7 +113,7 @@
             });
         }
 
-        // Khởi tạo DataTable lần đầu
+        // Khởi tạo DataTable và tải danh mục
         $('#categoryTable').DataTable({
             "paging": true,
             "ordering": true,
@@ -117,16 +126,14 @@
             }
         });
 
-        // Tải danh sách danh mục khi trang được tải
         loadCategories();
 
-        if (canEdit) {
-            // Hiển thị modal thêm danh mục
+        // Xử lý logic thêm, sửa, xóa tương tự như trước
+        if (canAdd) {
             $('#addCategoryBtn').on('click', function () {
                 $('#addCategoryModal').show();
             });
 
-            // Xử lý thêm danh mục
             $('#confirmAddCategory').on('click', function () {
                 var categoryName = $('#categoryName').val().trim();
                 if (categoryName === '') {
@@ -139,7 +146,7 @@
                     method: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
-                    data: JSON.stringify({ tenDanhMuc: categoryName }),
+                    data: JSON.stringify(categoryName),
                     success: function () {
                         alert('Thêm danh mục thành công.');
                         $('#addCategoryModal').hide();
@@ -153,13 +160,13 @@
                 });
             });
 
-            // Hủy thêm danh mục
             $('#cancelAddCategory').on('click', function () {
                 $('#addCategoryModal').hide();
                 $('#categoryName').val('');
             });
+        }
 
-            // Xử lý xóa danh mục
+        if (canDelete) {
             $('#categoryTable').on('click', '.delete-category', function () {
                 var categoryId = $(this).data('category-id');
                 if (confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
@@ -177,14 +184,16 @@
                     });
                 }
             });
+        }
 
-            // Xử lý sửa danh mục
+        if (canEdit) {
             $('#categoryTable').on('click', '.edit-category', function () {
                 var categoryId = $(this).data('category-id');
                 window.location.href = '/Admin/SuaDM/' + categoryId;
             });
         }
     });
+
 </script>
 
 <!-- Bao gồm các thư viện và plugin DataTables -->

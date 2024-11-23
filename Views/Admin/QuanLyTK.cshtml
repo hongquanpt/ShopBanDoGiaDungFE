@@ -84,7 +84,7 @@
             </div>
             <!-- Chân Modal -->
             <div class="modal-footer">
-               @*  <button type="button" class="btn btn-primary save-permissions">Lưu</button> *@
+                @*  <button type="button" class="btn btn-primary save-permissions">Lưu</button> *@
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
             </div>
         </div>
@@ -115,6 +115,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- Bao gồm các script cần thiết -->
 <!-- Select2 CSS -->
@@ -193,6 +194,44 @@
                     }
                     return responseData;
                 };
+
+                // Gọi API để lấy danh sách chức vụ
+                let allRoles = [];
+                async function getAllRoles() {
+                    try {
+                        const roles = await apiCall('https://localhost:7248/api/ChucVu');
+                        allRoles = roles; // Lưu danh sách roles để sử dụng trong loadUsers
+                        return roles;
+                    } catch (error) {
+                        console.error('Lỗi khi lấy danh sách chức vụ:', error);
+                        alert('Không thể tải danh sách chức vụ.');
+                        return [];
+                    }
+                }
+
+                // Gọi API để lấy danh sách chức năng
+                async function getAllFunctions() {
+                    try {
+                        const functions = await apiCall('https://localhost:7248/api/ChucNang');
+                        return functions;
+                    } catch (error) {
+                        console.error('Lỗi khi lấy danh sách chức năng:', error);
+                        alert('Không thể tải danh sách chức năng.');
+                        return [];
+                    }
+                }
+
+                // Gọi API để lấy danh sách hành động
+                async function getAllActions() {
+                    try {
+                        const actions = await apiCall('https://localhost:7248/api/HanhDong');
+                        return actions;
+                    } catch (error) {
+                        console.error('Lỗi khi lấy danh sách hành động:', error);
+                        alert('Không thể tải danh sách hành động.');
+                        return [];
+                    }
+                }
 
                 // Gọi API để lấy danh sách tài khoản
                 async function loadUsers() {
@@ -282,43 +321,14 @@
                     }
                 }
 
-                // Gọi API để lấy danh sách chức vụ
-                let allRoles = [];
-                async function getAllRoles() {
-                    try {
-                        const roles = await apiCall('https://localhost:7248/api/ChucVu');
-                        allRoles = roles; // Lưu danh sách roles để sử dụng trong loadUsers
-                        return roles;
-                    } catch (error) {
-                        console.error('Lỗi khi lấy danh sách chức vụ:', error);
-                        alert('Không thể tải danh sách chức vụ.');
-                        return [];
-                    }
-                }
-
-                // Gọi API để lấy danh sách chức năng
-                async function getAllFunctions() {
-                    try {
-                        const functions = await apiCall('https://localhost:7248/api/ChucNang');
-                        return functions;
-                    } catch (error) {
-                        console.error('Lỗi khi lấy danh sách chức năng:', error);
-                        alert('Không thể tải danh sách chức năng.');
-                        return [];
-                    }
-                }
-
-                // Gọi API để lấy danh sách hành động
-                async function getAllActions() {
-                    try {
-                        const actions = await apiCall('https://localhost:7248/api/HanhDong');
-                        return actions;
-                    } catch (error) {
-                        console.error('Lỗi khi lấy danh sách hành động:', error);
-                        alert('Không thể tải danh sách hành động.');
-                        return [];
-                    }
-                }
+                // Define a mapping from actionId to actionName
+                // **Please update the mapping based on your actual action IDs**
+                const actionIdMap = {
+                    '1': 'Xem',
+                    '2': 'Sửa',
+                    '3': 'Xóa'
+                    // Add more mappings if there are additional actions
+                };
 
                 // Xử lý sự kiện xóa tài khoản
                 $(document).on('click', '.delete-user', async function () {
@@ -336,13 +346,13 @@
                     }
                 });
 
-                // Xử lý sự kiện "Quản lý chức vụ" của người dùng
+                // Xử lý sự kiện "Quản lý quyền" của người dùng
                 $(document).on('click', '.manage-permissions', async function () {
                     const userId = $(this).data('user-id');
                     openPermissionModal(userId);
                 });
 
-                // Hàm mở modal và tải cây chức vụ cho người dùng
+                // Hàm mở modal và tải cây quyền cho người dùng
                 async function openPermissionModal(userId) {
                     try {
                         // Tải tất cả các chức vụ, chức năng và hành động
@@ -529,7 +539,7 @@
                             rolePermissionMap[rolePerm.roleId] = rolePerm.permissions;
                         });
 
-                        // Xây dựng dữ liệu cho jsTree (nếu quản lý permissions)
+                        // Xây dựng dữ liệu cho jsTree
                         const treeData = allRoles.map(role => {
                             const rolePermissions = rolePermissionMap[role.maChucVu] || [];
 
@@ -540,7 +550,6 @@
                                     selected: false // Mặc định không chọn
                                 },
                                 children: allFunctions.map(func => {
-                                    // Kiểm tra nếu chức vụ có bất kỳ quyền nào liên quan đến chức năng này
                                     const funcPermissions = rolePermissions.filter(p => p.maChucNang === func.maChucNang);
                                     const hasFuncPermission = funcPermissions.length > 0;
 
@@ -583,6 +592,88 @@
                             'plugins': ['checkbox']
                         });
 
+                        // Thêm sự kiện tự động chọn "Xem" khi "Sửa" hoặc "Xóa" được chọn
+                        $('#manageRolesTree').on('check_node.jstree', function (e, data) {
+                            const node = data.node;
+                            console.log('Checked node:', node.text, node.id);
+                            
+                            // Extract actionId from node.id (format: perm-<roleId>-<funcId>-<actionId>)
+                            const parts = node.id.split('-');
+                            if (parts.length !== 4) {
+                                console.warn('Unexpected node ID format:', node.id);
+                                return;
+                            }
+
+                            const roleId = parts[1];
+                            const funcId = parts[2];
+                            const actionId = parts[3];
+                            const actionName = actionIdMap[actionId];
+
+                            if (actionName === 'Sửa' || actionName === 'Xóa') {
+                                const tree = $('#manageRolesTree').jstree(true);
+
+                                // Assuming 'Xem' has actionId '1'
+                                const xemActionId = Object.keys(actionIdMap).find(key => actionIdMap[key] === 'Xem');
+                                if (!xemActionId) {
+                                    console.error('Cannot find actionId for "Xem".');
+                                    return;
+                                }
+
+                                const viewNodeId = `perm-${roleId}-${funcId}-${xemActionId}`;
+                                const viewNode = tree.get_node(viewNodeId);
+                                if (viewNode && !tree.is_checked(viewNode.id)) {
+                                    console.log('Auto-checking "Xem" node:', viewNode.text, viewNode.id);
+                                    tree.check_node(viewNode.id);
+                                }
+                            }
+                        });
+
+                        // Thêm sự kiện tự động bỏ chọn "Sửa" và "Xóa" khi "Xem" bị bỏ chọn
+                        $('#manageRolesTree').on('uncheck_node.jstree', function (e, data) {
+                            const node = data.node;
+                            console.log('Unchecked node:', node.text, node.id);
+                            
+                            // Extract actionId from node.id (format: perm-<roleId>-<funcId>-<actionId>)
+                            const parts = node.id.split('-');
+                            if (parts.length !== 4) {
+                                console.warn('Unexpected node ID format:', node.id);
+                                return;
+                            }
+
+                            const roleId = parts[1];
+                            const funcId = parts[2];
+                            const actionId = parts[3];
+                            const actionName = actionIdMap[actionId];
+
+                            if (actionName === 'Xem') {
+                                const tree = $('#manageRolesTree').jstree(true);
+
+                                // Assuming 'Sửa' has actionId '2' and 'Xóa' has actionId '3'
+                                const suaActionId = Object.keys(actionIdMap).find(key => actionIdMap[key] === 'Sửa');
+                                const xoaActionId = Object.keys(actionIdMap).find(key => actionIdMap[key] === 'Xóa');
+
+                                if (!suaActionId || !xoaActionId) {
+                                    console.error('Cannot find actionId for "Sửa" or "Xóa".');
+                                    return;
+                                }
+
+                                const editNodeId = `perm-${roleId}-${funcId}-${suaActionId}`;
+                                const deleteNodeId = `perm-${roleId}-${funcId}-${xoaActionId}`;
+
+                                const editNode = tree.get_node(editNodeId);
+                                const deleteNode = tree.get_node(deleteNodeId);
+
+                                if (editNode && tree.is_checked(editNode.id)) {
+                                    console.log('Auto-unchecking "Sửa" node:', editNode.text, editNode.id);
+                                    tree.uncheck_node(editNode.id);
+                                }
+                                if (deleteNode && tree.is_checked(deleteNode.id)) {
+                                    console.log('Auto-unchecking "Xóa" node:', deleteNode.text, deleteNode.id);
+                                    tree.uncheck_node(deleteNode.id);
+                                }
+                            }
+                        });
+
                         // Mở modal quản lý chức vụ
                         $('#manageRolesModal').modal('show');
 
@@ -621,7 +712,7 @@
 
                         // Gửi các quyền được chọn cho từng chức vụ lên API (sử dụng POST)
                         const permissionPromises = Object.keys(permissionsByRole).map(roleId => {
-                            return apiCall(`https://localhost:7248/api/ChucVu/${roleId}/permissions`, 'POST', { Permissions: permissionsByRole[roleId] });
+                            return apiCall(`https://localhost:7248/api/ChucVu/${roleId}/permissions`, 'POST', { permissions: permissionsByRole[roleId] });
                         });
 
                         await Promise.all(permissionPromises);
