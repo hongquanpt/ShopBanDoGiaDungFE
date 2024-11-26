@@ -166,13 +166,16 @@
             return;
         }
 
-        // Giải mã token và kiểm tra quyền truy cập
+        // Giải mã token và lấy danh sách quyền
         var decodedToken = jwt_decode(token);
-        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
-        var canEdit = Array.isArray(roles) ? roles.includes('admin') || roles.includes('category_manager') : roles === 'admin' || roles === 'category_manager';
+        var permissions = decodedToken.permissions || [];
+        var canView = permissions.includes("QuanLySanPham:Sua");
 
-        if (!canEdit) {
-            $('#addCategoryBtn').hide();
+        // Kiểm tra quyền xem
+        if (!canView) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/';
+            return;
         }
 
         // Thiết lập token cho tất cả các yêu cầu AJAX

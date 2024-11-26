@@ -96,7 +96,25 @@
                 }
             });
         }
+        // Lấy token từ localStorage
+        var token = localStorage.getItem('token');
+        if (!token) {
+            // Chưa đăng nhập, chuyển hướng đến trang đăng nhập
+            window.location.href = '/Access/Login';
+            return;
+        }
 
+        // Giải mã token và lấy danh sách quyền
+        var decodedToken = jwt_decode(token);
+        var permissions = decodedToken.permissions || [];
+        var canView = permissions.includes("QuanLySanPham:Sua");
+
+        // Kiểm tra quyền xem
+        if (!canView) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/';
+            return;
+        }
         // Gọi API để lấy danh sách danh mục sản phẩm và điền vào select #category
         $.ajax({
             url: 'https://localhost:7248/api/Category/danhmucs',
