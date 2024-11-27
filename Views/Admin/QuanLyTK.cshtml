@@ -383,6 +383,24 @@
                             rolePermissionMap[rolePerm.roleId] = rolePerm.permissions;
                         });
 
+                        // Hàm đổi tên chức năng và hành động
+                        const renamePermissions = (name) => {
+                            const renameMap = {
+                                "Xem": "Xem",
+                                "Them": "Thêm",
+                                "Sua": "Sửa",
+                                "Xoa": "Xóa",
+                                "QuanLyTaiKhoan": "Quản lý tài khoản",
+                                "QuanLySanPham": "Quản lý sản phẩm",
+                                "QuanLyDanhMuc": "Quản lý danh mục",
+                                "QuanLyHang": "Quản lý hãng",
+                                "QuanLyDonHang": "Quản lý đơn hàng",
+                                "ThongKe":"Thống kê",
+                                "Access": "Truy cập"
+                            };
+                            return renameMap[name] || name;
+                        };
+
                         // Xây dựng dữ liệu cho jsTree (chỉ hiển thị chức năng và hành động)
                         const treeData = allFunctions.map(func => {
                             // Kiểm tra quyền của người dùng đối với chức năng này
@@ -396,7 +414,7 @@
                             // Tạo node cho chức năng
                             const funcNode = {
                                 id: `func-${func.maChucNang}`,
-                                text: func.tenChucNang,
+                                text: renamePermissions(func.tenChucNang),  // Áp dụng đổi tên cho chức năng
                                 state: {
                                     selected: hasFuncPermission
                                 },
@@ -405,7 +423,7 @@
                                     const hasActionPermission = funcPermissions.some(p => p.maHanhDong === action.maHanhDong);
                                     return {
                                         id: `perm-${func.maChucNang}-${action.maHanhDong}`,
-                                        text: action.tenHanhDong,
+                                        text: renamePermissions(action.tenHanhDong),  // Áp dụng đổi tên cho hành động
                                         state: {
                                             selected: hasActionPermission
                                         }
@@ -532,24 +550,42 @@
                             rolePermissionMap[rolePerm.roleId] = rolePerm.permissions;
                         });
 
+                        // Hàm đổi tên chức năng và hành động
+                        const renamePermissions = (name) => {
+                            const renameMap = {
+                                "Xem": "Xem",
+                                "Them": "Thêm",
+                                "Sua": "Sửa",
+                                "Xoa": "Xóa",
+                                "QuanLyTaiKhoan": "Quản lý tài khoản",
+                                "QuanLySanPham": "Quản lý sản phẩm",
+                                "QuanLyDanhMuc": "Quản lý danh mục",
+                                "QuanLyHang": "Quản lý hãng",
+                                "QuanLyDonHang": "Quản lý đơn hàng",
+                                "ThongKe": "Thống kê",
+                                "Access": "Truy cập"
+                            };
+                            return renameMap[name] || name;
+                        };
+
                         // Xây dựng dữ liệu cho jsTree
                         const treeData = allRoles.map(role => {
                             const rolePermissions = rolePermissionMap[role.maChucVu] || [];
                             return {
                                 id: `role-${role.maChucVu}`,
-                                text: role.tenChucVu,
+                                text: renamePermissions(role.tenChucVu),  // Đổi tên chức vụ
                                 state: { selected: false }, // Mặc định không chọn
                                 children: allFunctions.map(func => {
                                     const funcPermissions = rolePermissions.filter(p => p.maChucNang === func.maChucNang);
                                     return {
                                         id: `func-${role.maChucVu}-${func.maChucNang}`,
-                                        text: func.tenChucNang,
+                                        text: renamePermissions(func.tenChucNang),  // Đổi tên chức năng
                                         state: { selected: funcPermissions.length > 0 },
                                         children: allActions.map(action => {
                                             const hasPermission = rolePermissions.some(p => p.maChucNang === func.maChucNang && p.maHanhDong === action.maHanhDong);
                                             return {
                                                 id: `perm-${role.maChucVu}-${func.maChucNang}-${action.maHanhDong}`,
-                                                text: action.tenHanhDong,
+                                                text: renamePermissions(action.tenHanhDong),  // Đổi tên hành động
                                                 state: { selected: hasPermission }
                                             };
                                         })
