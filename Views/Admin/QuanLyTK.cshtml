@@ -325,8 +325,9 @@
                 // **Please update the mapping based on your actual action IDs**
                 const actionIdMap = {
                     '1': 'Xem',
-                    '2': 'Sửa',
-                    '3': 'Xóa'
+                    '2': 'Them',
+                    '3': 'Sua',
+                    '4': 'Xoa'
                     // Add more mappings if there are additional actions
                 };
 
@@ -502,9 +503,10 @@
                     openManageRolesModal();
                 });
 
-                // Hàm mở modal quản lý chức vụ và quyền
                 async function openManageRolesModal() {
                     try {
+                        console.log("Hàm openManageRolesModal được gọi");
+
                         // Tải tất cả các chức vụ, chức năng và hành động
                         const [allRoles, allFunctions, allActions] = await Promise.all([
                             getAllRoles(),
@@ -533,48 +535,33 @@
                         // Xây dựng dữ liệu cho jsTree
                         const treeData = allRoles.map(role => {
                             const rolePermissions = rolePermissionMap[role.maChucVu] || [];
-
-                            const roleNode = {
+                            return {
                                 id: `role-${role.maChucVu}`,
                                 text: role.tenChucVu,
-                                state: {
-                                    selected: false // Mặc định không chọn
-                                },
+                                state: { selected: false }, // Mặc định không chọn
                                 children: allFunctions.map(func => {
                                     const funcPermissions = rolePermissions.filter(p => p.maChucNang === func.maChucNang);
-                                    const hasFuncPermission = funcPermissions.length > 0;
-
-                                    const funcNode = {
+                                    return {
                                         id: `func-${role.maChucVu}-${func.maChucNang}`,
                                         text: func.tenChucNang,
-                                        state: {
-                                            selected: hasFuncPermission
-                                        },
+                                        state: { selected: funcPermissions.length > 0 },
                                         children: allActions.map(action => {
                                             const hasPermission = rolePermissions.some(p => p.maChucNang === func.maChucNang && p.maHanhDong === action.maHanhDong);
                                             return {
                                                 id: `perm-${role.maChucVu}-${func.maChucNang}-${action.maHanhDong}`,
                                                 text: action.tenHanhDong,
-                                                state: {
-                                                    selected: hasPermission
-                                                }
+                                                state: { selected: hasPermission }
                                             };
                                         })
                                     };
-
-                                    return funcNode;
                                 })
                             };
-
-                            return roleNode;
                         });
 
-                        // Khởi tạo jsTree cho modal quản lý chức vụ
-                        $('#manageRolesTree').jstree('destroy');
+                        $('#manageRolesTree').jstree('destroy'); // Destroy any previous instance
+                        console.log("Khởi tạo jsTree..."); // Debugging log
                         $('#manageRolesTree').jstree({
-                            'core': {
-                                'data': treeData
-                            },
+                            'core': { 'data': treeData },
                             'checkbox': {
                                 'keep_selected_style': false,
                                 'three_state': false,
@@ -583,96 +570,91 @@
                             'plugins': ['checkbox']
                         });
 
-                        // Thêm sự kiện tự động chọn "Xem" khi "Sửa" hoặc "Xóa" được chọn
-                        $('#manageRolesTree').on('check_node.jstree', function (e, data) {
+                        // Thêm sự kiện tự động chọn "Xem" khi "Thêm", "Sửa" hoặc "Xóa" được chọn
+                        $('#manageRolesTree').on('changed.jstree', function (e, data) {
+                            // Kiểm tra nếu là sự kiện thay đổi nút
                             const node = data.node;
-                            console.log('Checked node:', node.text, node.id);
-                            
-                            // Extract actionId from node.id (format: perm-<roleId>-<funcId>-<actionId>)
-                            const parts = node.id.split('-');
-                            if (parts.length !== 4) {
-                                console.warn('Unexpected node ID format:', node.id);
-                                return;
-                            }
-
-                            const roleId = parts[1];
-                            const funcId = parts[2];
-                            const actionId = parts[3];
-                            const actionName = actionIdMap[actionId];
-
-                            if (actionName === 'Sửa' || actionName === 'Xóa') {
-                                const tree = $('#manageRolesTree').jstree(true);
-
-                                // Assuming 'Xem' has actionId '1'
-                                const xemActionId = Object.keys(actionIdMap).find(key => actionIdMap[key] === 'Xem');
-                                if (!xemActionId) {
-                                    console.error('Cannot find actionId for "Xem".');
-                                    return;
-                                }
-
-                                const viewNodeId = `perm-${roleId}-${funcId}-${xemActionId}`;
-                                const viewNode = tree.get_node(viewNodeId);
-                                if (viewNode && !tree.is_checked(viewNode.id)) {
-                                    console.log('Auto-checking "Xem" node:', viewNode.text, viewNode.id);
-                                    tree.check_node(viewNode.id);
-                                }
+                            console.log('Checked node:', node.text, node.id); // Debugging khi node được check
+                            if (isActionChecked(node.id)) {
+                                autoCheckViewPermission(node.id);
+                            } else if (isActionUnchecked(node.id)) {
+                                autoUncheckActions(node.id);
                             }
                         });
 
-                        // Thêm sự kiện tự động bỏ chọn "Sửa" và "Xóa" khi "Xem" bị bỏ chọn
-                        $('#manageRolesTree').on('uncheck_node.jstree', function (e, data) {
-                            const node = data.node;
-                            console.log('Unchecked node:', node.text, node.id);
-                            
-                            // Extract actionId from node.id (format: perm-<roleId>-<funcId>-<actionId>)
-                            const parts = node.id.split('-');
-                            if (parts.length !== 4) {
-                                console.warn('Unexpected node ID format:', node.id);
-                                return;
-                            }
-
-                            const roleId = parts[1];
-                            const funcId = parts[2];
-                            const actionId = parts[3];
-                            const actionName = actionIdMap[actionId];
-
-                            if (actionName === 'Xem') {
-                                const tree = $('#manageRolesTree').jstree(true);
-
-                                // Assuming 'Sửa' has actionId '2' and 'Xóa' has actionId '3'
-                                const suaActionId = Object.keys(actionIdMap).find(key => actionIdMap[key] === 'Sửa');
-                                const xoaActionId = Object.keys(actionIdMap).find(key => actionIdMap[key] === 'Xóa');
-
-                                if (!suaActionId || !xoaActionId) {
-                                    console.error('Cannot find actionId for "Sửa" or "Xóa".');
-                                    return;
-                                }
-
-                                const editNodeId = `perm-${roleId}-${funcId}-${suaActionId}`;
-                                const deleteNodeId = `perm-${roleId}-${funcId}-${xoaActionId}`;
-
-                                const editNode = tree.get_node(editNodeId);
-                                const deleteNode = tree.get_node(deleteNodeId);
-
-                                if (editNode && tree.is_checked(editNode.id)) {
-                                    console.log('Auto-unchecking "Sửa" node:', editNode.text, editNode.id);
-                                    tree.uncheck_node(editNode.id);
-                                }
-                                if (deleteNode && tree.is_checked(deleteNode.id)) {
-                                    console.log('Auto-unchecking "Xóa" node:', deleteNode.text, deleteNode.id);
-                                    tree.uncheck_node(deleteNode.id);
-                                }
-                            }
+                        // Mở modal và thiết lập aria-hidden
+                        $('#manageRolesModal').removeAttr('aria-hidden').modal('show');
+                        $('#manageRolesModal').on('shown.bs.modal', function () {
+                            $(this).find('button').first().focus();
                         });
-
-                        // Mở modal quản lý chức vụ
-                        $('#manageRolesModal').modal('show');
 
                     } catch (error) {
-                        console.error('Lỗi khi mở modal quản lý chức vụ:', error);
-                        alert('Không thể mở modal quản lý chức vụ.');
+                        console.error('Lỗi khi mở modal quản lý quyền:', error);
                     }
                 }
+
+                // Kiểm tra xem quyền đó có phải là "Thêm", "Sửa", "Xóa" hay không
+                function isActionChecked(nodeId) {
+                    const parts = nodeId.split('-');
+                    return parts.length === 4 && ['2', '3', '4'].includes(parts[3]); // 2: Thêm, 3: Sửa, 4: Xóa
+                }
+
+                // Kiểm tra xem quyền đó có phải là "Xem" hay không
+                function isActionUnchecked(nodeId) {
+                    const parts = nodeId.split('-');
+                    return parts.length === 4 && parts[3] === '1'; // 1: Xem
+                }
+
+                // Tự động chọn quyền "Xem" khi quyền "Thêm", "Sửa", "Xóa" được chọn
+                function autoCheckViewPermission(nodeId) {
+                    const parts = nodeId.split('-');
+                    const roleId = parts[1];
+                    const funcId = parts[2];
+
+                    const xemActionId = findActionIdByName('Xem');
+                    if (!xemActionId) return;
+
+                    const viewNodeId = `perm-${roleId}-${funcId}-${xemActionId}`;
+                    const tree = $('#manageRolesTree').jstree(true);
+                    const viewNode = tree.get_node(viewNodeId);
+                    if (viewNode && !tree.is_checked(viewNode.id)) {
+                        tree.check_node(viewNode.id);
+                        console.log('Auto-checking "Xem" node:', viewNode.text, viewNode.id);
+                    }
+                }
+
+                // Tự động bỏ chọn quyền "Thêm", "Sửa", "Xóa" khi quyền "Xem" bị bỏ chọn
+                function autoUncheckActions(nodeId) {
+                    const parts = nodeId.split('-');
+                    const roleId = parts[1];
+                    const funcId = parts[2];
+
+                    const themActionId = findActionIdByName('Them');
+                    const suaActionId = findActionIdByName('Sua');
+                    const xoaActionId = findActionIdByName('Xoa');
+                    if (!themActionId || !suaActionId || !xoaActionId) return;
+
+                    const tree = $('#manageRolesTree').jstree(true);
+                    uncheckActionNode(tree, roleId, funcId, themActionId);
+                    uncheckActionNode(tree, roleId, funcId, suaActionId);
+                    uncheckActionNode(tree, roleId, funcId, xoaActionId);
+                }
+
+                // Trả về ID hành động theo tên
+                function findActionIdByName(actionName) {
+                    return Object.keys(actionIdMap).find(key => actionIdMap[key] === actionName);
+                }
+
+                // Bỏ chọn node hành động
+                function uncheckActionNode(tree, roleId, funcId, actionId) {
+                    const nodeId = `perm-${roleId}-${funcId}-${actionId}`;
+                    const node = tree.get_node(nodeId);
+                    if (node && tree.is_checked(node.id)) {
+                        tree.uncheck_node(node.id);
+                        console.log(`Auto-unchecking "${node.text}" node:`, node.id);
+                    }
+                }
+
 
                 // Xử lý sự kiện lưu chức vụ và quyền
                 $('.save-roles-permissions').on('click', async function () {
