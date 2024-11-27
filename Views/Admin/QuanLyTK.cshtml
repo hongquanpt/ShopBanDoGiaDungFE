@@ -355,9 +355,8 @@
                 // Hàm mở modal và tải cây quyền cho người dùng
                 async function openPermissionModal(userId) {
                     try {
-                        // Tải tất cả các chức vụ, chức năng và hành động
-                        const [allRoles, allFunctions, allActions] = await Promise.all([
-                            getAllRoles(),
+                        // Tải tất cả các chức năng và hành động
+                        const [allFunctions, allActions] = await Promise.all([
                             getAllFunctions(),
                             getAllActions()
                         ]);
@@ -383,45 +382,37 @@
                             rolePermissionMap[rolePerm.roleId] = rolePerm.permissions;
                         });
 
-                        // Xây dựng dữ liệu cho jsTree
-                        const treeData = allRoles.map(role => {
-                            const isRoleAssigned = userRoles.some(userRole => userRole.maChucVu === role.maChucVu);
-                            const rolePermissions = rolePermissionMap[role.maChucVu] || [];
+                        // Xây dựng dữ liệu cho jsTree (chỉ hiển thị chức năng và hành động)
+                        const treeData = allFunctions.map(func => {
+                            // Kiểm tra quyền của người dùng đối với chức năng này
+                            const funcPermissions = rolesWithPermissions.flatMap(rolePerm =>
+                                rolePerm.permissions.filter(p => p.maChucNang === func.maChucNang)
+                            );
 
-                            const roleNode = {
-                                id: `role-${role.maChucVu}`,
-                                text: role.tenChucVu,
+                            // Kiểm tra nếu chức năng này có quyền
+                            const hasFuncPermission = funcPermissions.length > 0;
+
+                            // Tạo node cho chức năng
+                            const funcNode = {
+                                id: `func-${func.maChucNang}`,
+                                text: func.tenChucNang,
                                 state: {
-                                    selected: isRoleAssigned
+                                    selected: hasFuncPermission
                                 },
-                                children: allFunctions.map(func => {
-                                    // Kiểm tra nếu chức vụ có bất kỳ quyền nào liên quan đến chức năng này
-                                    const funcPermissions = rolePermissions.filter(p => p.maChucNang === func.maChucNang);
-                                    const hasFuncPermission = funcPermissions.length > 0;
-
-                                    const funcNode = {
-                                        id: `func-${role.maChucVu}-${func.maChucNang}`,
-                                        text: func.tenChucNang,
+                                children: allActions.map(action => {
+                                    // Kiểm tra quyền cho hành động này
+                                    const hasActionPermission = funcPermissions.some(p => p.maHanhDong === action.maHanhDong);
+                                    return {
+                                        id: `perm-${func.maChucNang}-${action.maHanhDong}`,
+                                        text: action.tenHanhDong,
                                         state: {
-                                            selected: hasFuncPermission
-                                        },
-                                        children: allActions.map(action => {
-                                            const hasPermission = rolePermissions.some(p => p.maChucNang === func.maChucNang && p.maHanhDong === action.maHanhDong);
-                                            return {
-                                                id: `perm-${role.maChucVu}-${func.maChucNang}-${action.maHanhDong}`,
-                                                text: action.tenHanhDong,
-                                                state: {
-                                                    selected: hasPermission
-                                                }
-                                            };
-                                        })
+                                            selected: hasActionPermission
+                                        }
                                     };
-
-                                    return funcNode;
                                 })
                             };
 
-                            return roleNode;
+                            return funcNode;
                         });
 
                         // Khởi tạo jsTree với cấu hình cascade 'none' để không tự động chọn cha hoặc con
