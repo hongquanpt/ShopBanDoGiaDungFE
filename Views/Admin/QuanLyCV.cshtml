@@ -1,0 +1,230 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="wrapper">
+    <div class="content-wrapper">
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <label class="card-title">Quản lý chức vụ</label>
+                            </div>
+                            <div class="card-body">
+                                <!-- Bảng hiển thị chức vụ -->
+                                <table id="roleTable" class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã chức vụ</th>
+                                            <th>Tên chức vụ</th>
+                                            <th class="edit-column">Sửa chức vụ</th>
+                                            <th class="delete-column">Xóa chức vụ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dữ liệu sẽ được thêm vào bằng JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Nút thêm chức vụ -->
+                    <button id="addRoleBtn" class="btn btn-primary">Thêm chức vụ mới</button>
+
+                    <!-- Modal thêm chức vụ -->
+                    <div id="addRoleModal" style="display: none;">
+                        <div class="modal-content">
+                            <h3>Thêm chức vụ mới</h3>
+                            <input type="text" id="roleName" placeholder="Nhập tên chức vụ mới" />
+                            <button id="confirmAddRole" class="btn btn-success">Thêm chức vụ</button>
+                            <button id="cancelAddRole" class="btn btn-secondary">Hủy bỏ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Bao gồm thư viện jQuery -->
+<script src="~/new/jquery-3.6.0.min.js"></script>
+
+<!-- Script để gọi API và hiển thị dữ liệu -->
+<script>
+    $(document).ready(function () {
+        var token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token và lấy danh sách quyền
+        var decodedToken = jwt_decode(token);
+        var permissions = decodedToken.permissions || [];
+        var canView = permissions.includes("QuanLyChucVu:Xem");
+        var canAdd = permissions.includes("QuanLyChucVu:Them");
+        var canEdit = permissions.includes("QuanLyChucVu:Sua");
+        var canDelete = permissions.includes("QuanLyChucVu:Xoa");
+
+        // Kiểm tra quyền xem
+        if (!canView) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/';
+            return;
+        }
+
+        // Ẩn nút thêm nếu không có quyền
+        if (!canAdd) {
+            $('#addRoleBtn').hide();
+        }
+
+        // Ẩn các cột sửa và xóa nếu không có quyền
+        if (!canEdit) {
+            $('.edit-column').hide();
+        }
+        if (!canDelete) {
+            $('.delete-column').hide();
+        }
+
+        // Hàm tải danh sách chức vụ
+        function loadRoles(page = 1) {
+            $.ajax({
+                url: `https://localhost:7248/api/ChucVu?page=${page}&pageSize=100`,
+                method: 'GET',
+                dataType: 'json',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                },
+                success: function (data) {
+                    var dataTable = $('#roleTable').DataTable();
+                    dataTable.clear(); // Xóa dữ liệu hiện tại trong bảng
+                    console.log(data);
+                    // Duyệt qua các chức vụ và thêm vào bảng
+                    data.forEach(function (role) {
+                        console.log(role);
+                        var row = [
+                            role.maChucVu,
+                            role.tenChucVu
+                            
+                        ];
+                        if (canEdit) {
+                            row.push('<button class="btn btn-success edit-role" data-role-id="' + role.maChucVu + '">Chỉnh sửa</button>');
+                        } else {
+                            row.push(''); // Nếu không có quyền, cột trống
+                        }
+                        if (canDelete) {
+                            row.push('<button class="btn btn-danger delete-role" data-role-id="' + role.maChucVu + '">Xóa</button>');
+                        } else {
+                            row.push('');
+                        }
+                        dataTable.row.add(row);
+                    });
+
+                    dataTable.draw();
+                },
+                error: function (error) {
+                    console.error('Lỗi khi lấy danh sách chức vụ:', error);
+                }
+            });
+        }
+
+        // Khởi tạo DataTable và tải dữ liệu lần đầu
+        $('#roleTable').DataTable({
+            "paging": true,
+            "ordering": true,
+            "info": true,
+            "searching": true,
+            "language": {
+                "paginate": { "next": "Trang sau", "previous": "Trang trước" },
+                "info": "Hiển thị từ _START_ đến _END_ của _TOTAL_ chức vụ",
+                "search": "Tìm kiếm:"
+            }
+        });
+
+        loadRoles();
+
+        // Xử lý thêm chức vụ
+        if (canAdd) {
+            $('#addRoleBtn').on('click', function () {
+                $('#addRoleModal').show();
+            });
+
+            $('#confirmAddRole').on('click', function () {
+                var roleName = $('#roleName').val().trim();
+                if (roleName === '') {
+                    alert('Vui lòng nhập tên chức vụ.');
+                    return;
+                }
+
+                $.ajax({
+                    url: 'https://localhost:7248/api/ChucVu',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({ tenChucVu: roleName }),
+                    success: function () {
+                        alert('Thêm chức vụ thành công.');
+                        $('#addRoleModal').hide();
+                        $('#roleName').val('');
+                        loadRoles();
+                    },
+                    error: function (error) {
+                        console.error('Lỗi khi thêm chức vụ:', error);
+                        alert('Không thể thêm chức vụ.');
+                    }
+                });
+            });
+
+            $('#cancelAddRole').on('click', function () {
+                $('#addRoleModal').hide();
+                $('#roleName').val('');
+            });
+        }
+
+        // Xử lý xóa chức vụ
+        if (canDelete) {
+            $('#roleTable').on('click', '.delete-role', function () {
+                var roleId = $(this).data('role-id');
+                if (confirm('Bạn có chắc chắn muốn xóa chức vụ này?')) {
+                    $.ajax({
+                        url: 'https://localhost:7248/api/ChucVu/' + roleId,
+                        method: 'DELETE',
+                        success: function () {
+                            alert('Xóa chức vụ thành công.');
+                            loadRoles();
+                        },
+                        error: function (error) {
+                            console.error('Lỗi khi xóa chức vụ:', error);
+                            alert('Không thể xóa chức vụ.');
+                        }
+                    });
+                }
+            });
+        }
+
+        // Xử lý sửa chức vụ
+        if (canEdit) {
+            $('#roleTable').on('click', '.edit-role', function () {
+                var roleId = $(this).data('role-id');
+                window.location.href = '/Admin/SuaCV/' + roleId;
+            });
+        }
+    });
+</script>
+
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- DataTables & Plugins -->
+<link rel="stylesheet" href="~/Admin/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="~/Admin/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+<script src="~/Admin/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="~/Admin/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+
+<script src="~/Admin/dist/js/adminlte.min.js"></script>

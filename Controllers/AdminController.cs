@@ -24,7 +24,12 @@ namespace ShopBanDoGiaDung.Controllers
             return View();
 
         }
+        public IActionResult QuanLyCV()
+        {
 
+            return View();
+
+        }
         #endregion
         #region Quản lý tài khoản
         public IActionResult QuanLyTK()
@@ -36,7 +41,7 @@ namespace ShopBanDoGiaDung.Controllers
         public IActionResult SuaCV()
         {
            
-            return RedirectToAction("QuanLyTK","Admin");
+            return View();
         }
       
 

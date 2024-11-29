@@ -1,0 +1,185 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="content-wrapper">
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Left column -->
+                <div class="col-md-6">
+                    <!-- General form elements -->
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Cập nhật thông tin chức vụ</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form id="frmSuaChucVu" method="post">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="tenchucvumoi">Tên chức vụ:</label>
+                        <input type="text" class="form-control" id="tenchucvumoi" name="Moi" placeholder="Nhập tên chức vụ">
+                    </div>
+                    <!-- Hidden input để lưu trữ ID của chức vụ -->
+                    <input type="hidden" id="MaChucVu" value="">
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-primary" id="confirm">Lưu</button>
+                        <button type="button" class="btn btn-default" id="cancel">Hủy bỏ</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
+
+<!-- Bao gồm các thư viện cần thiết từ server -->
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="~/Admin/dist/js/adminlte.min.js"></script>
+
+<script src="~/new/jwt-decode.min.js"></script>
+<script>
+    $(document).ready(function () {
+        // Hàm để lấy số cuối cùng từ URL
+        function getLastSegmentAsNumber() {
+            var pathname = window.location.pathname;
+            if (pathname.endsWith('/')) {
+                pathname = pathname.slice(0, -1);
+            }
+            var segments = pathname.split('/');
+            var lastSegment = segments.pop();
+            var id = parseInt(lastSegment, 10);
+            if (isNaN(id)) {
+                console.error("Không tìm thấy ID hợp lệ trong URL.");
+                alert("Không tìm thấy ID hợp lệ trong URL.");
+                return null;
+            }
+            return id;
+        }
+
+        // Lấy ID từ URL
+        var roleId = getLastSegmentAsNumber();
+        if (!roleId) {
+            window.location = '@Url.Action("QuanLyCV", "Admin")';
+            return;
+        }
+
+        $('#MaChucVu').val(roleId);  // Lưu ID vào hidden input
+
+        // Lấy token từ localStorage
+        var token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token và kiểm tra quyền
+        var decodedToken = jwt_decode(token);
+        var permissions = decodedToken.permissions || [];
+        var canEdit = permissions.includes("QuanLyChucVu:Sua");
+
+        if (!canEdit) {
+            alert('Bạn không có quyền sửa chức vụ.');
+            window.location.href = '/';
+            return;
+        }
+
+        // Gọi API để lấy thông tin chức vụ
+        $.ajax({
+            url: `https://localhost:7248/api/ChucVu/roles1/${roleId}`, // URL API để lấy thông tin chức vụ
+            method: 'GET',
+            contentType: 'application/json',
+            dataType: 'json',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            success: function (res) {
+                console.log(res);
+                if (res) {
+                    $('#tenchucvumoi').val(res.tendm); // Điền dữ liệu vào form
+                } else {
+                    alert('Không lấy được thông tin chức vụ.');
+                    window.location = '@Url.Action("QuanLyCV", "Admin")';
+                }
+            },
+            error: function (error) {
+                console.error('Lỗi khi lấy thông tin chức vụ:', error);
+                alert("Có lỗi xảy ra, vui lòng thử lại.");
+                window.location = '@Url.Action("QuanLyCV", "Admin")';
+            }
+        });
+
+        // Xử lý sự kiện lưu
+        $('#confirm').on('click', function () {
+            SuaChucVu(roleId);
+        });
+
+        // Xử lý sự kiện hủy bỏ
+        $('#cancel').on('click', function () {
+            window.location = '@Url.Action("QuanLyCV", "Admin")';
+        });
+    });
+
+    function SuaChucVu(id) {
+        var token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        var decodedToken = jwt_decode(token);
+        var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
+
+        var hasAccess = false;
+        if (Array.isArray(roles)) {
+            hasAccess = roles.includes('admin') || roles.includes('manager');
+        } else {
+            hasAccess = roles === 'admin' || roles === 'manager';
+        }
+
+        if (!hasAccess) {
+            alert('Bạn không có quyền truy cập trang này.');
+            window.location.href = '/';
+            return;
+        }
+
+        var tenChucVu = $('#tenchucvumoi').val().trim();
+        if (tenChucVu === "") {
+            alert("Bạn chưa nhập tên chức vụ.");
+            return;
+        }
+
+        // Gửi yêu cầu cập nhật chức vụ
+        $.ajax({
+            url: `https://localhost:7248/api/ChucVu/${id}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            dataType: 'json',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            data: JSON.stringify({ tenChucVu: tenChucVu }),
+            success: function (res) {
+                if (res) {
+                    Swal.fire({
+                        position: 'center',
+                        icon: 'success',
+                        title: 'Sửa thành công',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location = '@Url.Action("QuanLyCV", "Admin")';
+                    });
+                } else {
+                    alert(res.message || "Sửa chức vụ không thành công.");
+                }
+            },
+            error: function (error) {
+                console.error('Lỗi khi sửa chức vụ:', error);
+                alert("Có lỗi xảy ra, vui lòng thử lại.");
+            }
+        });
+    }
+</script>
