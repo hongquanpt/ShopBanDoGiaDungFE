@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
+
 using System.Security.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,7 +47,12 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["Cache-Control"] = "no-store";
+    context.Response.Headers["Pragma"] = "no-cache";
+    await next.Invoke();
+});
 // Sử dụng HTTPS
 app.UseHttpsRedirection();
 
