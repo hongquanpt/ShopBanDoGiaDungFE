@@ -9,9 +9,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <label class="card-title">Quản lý chức vụ</label>
+
+                                <button style="margin-left:75%" id="addRoleBtn" class="btn btn-success" data-toggle="modal" data-target="#addRoleModal">Thêm chức vụ mới</button>
                             </div>
+                           
                             <div class="card-body">
                                 <!-- Bảng hiển thị chức vụ -->
                                 <table id="roleTable" class="table table-bordered table-striped">
@@ -32,7 +35,6 @@
                         </div>
                     </div>
 
-                    <button id="addRoleBtn" class="btn btn-primary" data-toggle="modal" data-target="#addRoleModal">Thêm chức vụ mới</button>
                 </div>
             </div>
         </section>
@@ -62,7 +64,7 @@
             </div>
             <!-- Chân Modal -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-success" id="confirmAddRole">Thêm Chức Vụ</button>
+                <button type="button" class="btn btn-primary" id="confirmAddRole">Thêm Chức Vụ</button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy bỏ</button>
             </div>
         </div>

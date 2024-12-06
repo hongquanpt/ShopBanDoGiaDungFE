@@ -9,8 +9,9 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <label class="card-title">Quản lý thông tin danh mục sản phẩm</label>
+                                <button style="margin-left:55%" id="addCategoryBtn" class="btn btn-success">Thêm danh mục mới</button>
                             </div>
                             <div class="card-body">
                                 <table id="categoryTable" class="table table-bordered table-striped">
@@ -29,19 +30,40 @@
                             </div>
                         </div>
                     </div>
-                    <button id="addCategoryBtn" class="btn btn-primary">Thêm danh mục mới</button>
-                    <!-- Modal thêm danh mục -->
-                    <div id="addCategoryModal" style="display: none;">
-                        <div class="modal-content">
-                            <h3>Thêm danh mục mới</h3>
-                            <input type="text" id="categoryName" placeholder="Nhập tên danh mục mới" />
-                            <button id="confirmAddCategory" class="btn btn-success">Thêm danh mục</button>
-                            <button id="cancelAddCategory" class="btn btn-secondary">Hủy bỏ</button>
-                        </div>
-                    </div>
+                 
+                  
                 </div>
             </div>
         </section>
+    </div>
+</div>
+<!-- Modal thêm danh mục -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <!-- Tiêu đề Modal -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">Thêm Danh Mục Mới</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <!-- Nội dung Modal -->
+            <div class="modal-body">
+                <!-- Form thêm danh mục -->
+                <form id="addCategoryForm">
+                    <div class="form-group">
+                        <label for="categoryName">Tên Danh Mục</label>
+                        <input type="text" class="form-control" id="categoryName" placeholder="Nhập tên danh mục mới" required>
+                    </div>
+                </form>
+            </div>
+            <!-- Chân Modal -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="confirmAddCategory">Thêm Danh Mục</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy bỏ</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -137,42 +159,42 @@
         loadCategories();
 
         // Xử lý logic thêm, sửa, xóa tương tự như trước
-        if (canAdd) {
-            $('#addCategoryBtn').on('click', function () {
-                $('#addCategoryModal').show();
-            });
+           if (canAdd) {
+        $('#addCategoryBtn').on('click', function () {
+            $('#addCategoryModal').modal('show');
+        });
 
-            $('#confirmAddCategory').on('click', function () {
-                var categoryName = $('#categoryName').val().trim();
-                if (categoryName === '') {
-                    alert('Vui lòng nhập tên danh mục.');
-                    return;
+        $('#confirmAddCategory').on('click', function () {
+            var categoryName = $('#categoryName').val().trim();
+            if (categoryName === '') {
+                alert('Vui lòng nhập tên danh mục.');
+                return;
+            }
+
+            $.ajax({
+                url: 'https://localhost:7248/api/Category/danhmucs',
+                method: 'POST',
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify(categoryName),
+                success: function () {
+                    alert('Thêm danh mục thành công.');
+                    $('#addCategoryModal').modal('hide');
+                    $('#categoryName').val('');
+                    loadCategories();
+                },
+                error: function (error) {
+                    console.error('Lỗi khi thêm danh mục:', error);
+                    alert('Không thể thêm danh mục.');
                 }
-
-                $.ajax({
-                    url: 'https://localhost:7248/api/Category/danhmucs',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    data: JSON.stringify(categoryName),
-                    success: function () {
-                        alert('Thêm danh mục thành công.');
-                        $('#addCategoryModal').hide();
-                        $('#categoryName').val('');
-                        loadCategories();
-                    },
-                    error: function (error) {
-                        console.error('Lỗi khi thêm danh mục:', error);
-                        alert('Không thể thêm danh mục.');
-                    }
-                });
             });
+        });
 
-            $('#cancelAddCategory').on('click', function () {
-                $('#addCategoryModal').hide();
-                $('#categoryName').val('');
-            });
-        }
+        $('#cancelAddCategory').on('click', function () {
+            $('#addCategoryModal').modal('hide');
+            $('#categoryName').val('');
+        });
+    }
 
         if (canDelete) {
             $('#categoryTable').on('click', '.delete-category', function () {

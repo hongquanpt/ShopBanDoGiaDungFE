@@ -9,8 +9,10 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
-                            <div class="card-header">
+                            <div class="card-header d-flex justify-content-between align-items-center">
                                 <label class="card-title">Quản lý hãng sản xuất</label>
+                                <!-- Nút thêm hãng -->
+                                <button style="margin-left:68%" id="addBrandBtn" class="btn btn-success">Thêm hãng mới</button>
                             </div>
                             <div class="card-body">
                                 <!-- Bảng hiển thị hãng -->
@@ -31,21 +33,41 @@
                         </div>
                     </div>
 
-                    <!-- Nút thêm hãng -->
-                    <button id="addBrandBtn" class="btn btn-primary">Thêm hãng mới</button>
+                  
 
-                    <!-- Modal thêm hãng -->
-                    <div id="addBrandModal" style="display: none;">
-                        <div class="modal-content">
-                            <h3>Thêm hãng mới</h3>
-                            <input type="text" id="brandName" placeholder="Nhập tên hãng mới" />
-                            <button id="confirmAddBrand" class="btn btn-success">Thêm hãng</button>
-                            <button id="cancelAddBrand" class="btn btn-secondary">Hủy bỏ</button>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
         </section>
+    </div>
+</div>
+<!-- Modal thêm hãng -->
+<div class="modal fade" id="addBrandModal" tabindex="-1" role="dialog" aria-labelledby="addBrandModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <!-- Tiêu đề Modal -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBrandModalLabel">Thêm Hãng Mới</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <!-- Nội dung Modal -->
+            <div class="modal-body">
+                <!-- Form thêm hãng -->
+                <form id="addBrandForm">
+                    <div class="form-group">
+                        <label for="brandName">Tên Hãng</label>
+                        <input type="text" class="form-control" id="brandName" placeholder="Nhập tên hãng mới" required>
+                    </div>
+                </form>
+            </div>
+            <!-- Chân Modal -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="confirmAddBrand">Thêm Hãng</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy bỏ</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -143,10 +165,9 @@
 
         loadBrands();
 
-        // Xử lý thêm hãng
-        if (canAdd) {
+           if (canAdd) {
             $('#addBrandBtn').on('click', function () {
-                $('#addBrandModal').show();
+                $('#addBrandModal').modal('show');
             });
 
             $('#confirmAddBrand').on('click', function () {
@@ -164,9 +185,9 @@
                     data: JSON.stringify(brandName),
                     success: function () {
                         alert('Thêm hãng thành công.');
-                        $('#addBrandModal').hide();
+                        $('#addBrandModal').modal('hide');
                         $('#brandName').val('');
-                        loadBrands();
+                        loadBrands(); // Hàm tự định nghĩa để load lại danh sách hãng
                     },
                     error: function (error) {
                         console.error('Lỗi khi thêm hãng:', error);
@@ -175,8 +196,8 @@
                 });
             });
 
-            $('#cancelAddBrand').on('click', function () {
-                $('#addBrandModal').hide();
+            // Khi nhấn nút hủy (hoặc nút đóng), đóng modal và reset trường nhập
+            $('#addBrandModal').on('click', '.close, [data-dismiss="modal"]', function () {
                 $('#brandName').val('');
             });
         }

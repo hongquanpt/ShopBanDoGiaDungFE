@@ -393,7 +393,7 @@
                             try {
                                 // Gửi danh sách roleIds lên API (sử dụng POST)
                                 await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: selectedRoles.map(id => parseInt(id)) });
-                                alert('Cập nhật chức vụ thành công');
+                                
                                 loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
                             } catch (error) {
                                 console.error('Lỗi khi cập nhật chức vụ:', error);
@@ -592,7 +592,7 @@
 
                         await Promise.all(permissionPromises);
 
-                        alert('Cập nhật quyền thành công');
+                        
                         $('#permissionModal').modal('hide');
                         loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
 
@@ -817,7 +817,7 @@
 
                         await Promise.all(permissionPromises);
 
-                        alert('Cập nhật chức vụ và quyền thành công');
+                    
                         $('#manageRolesModal').modal('hide');
                         loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
                     } catch (error) {
