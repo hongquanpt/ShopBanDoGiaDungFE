@@ -107,7 +107,7 @@
         // Giải mã token và lấy danh sách quyền
         var decodedToken = jwt_decode(token);
         var permissions = decodedToken.permissions || [];
-        var canView = permissions.includes("QuanLySanPham:Sua");
+        var canView = permissions.includes("QuanLySanPham:Them");
 
         // Kiểm tra quyền xem
         if (!canView) {

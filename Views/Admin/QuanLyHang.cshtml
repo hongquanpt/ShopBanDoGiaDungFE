@@ -79,15 +79,15 @@
 
         // Ẩn nút thêm nếu không có quyền
         if (!canAdd) {
-            $('#addBrandBtn').hide();
+            $('#addBrandBtn').closest('th, td').remove();
         }
 
         // Ẩn các cột sửa và xóa nếu không có quyền
         if (!canEdit) {
-            $('.edit-column').hide();
+            $('.edit-column').closest('th, td').remove();
         }
         if (!canDelete) {
-            $('.delete-column').hide();
+            $('.delete-column').closest('th, td').remove();
         }
 
         // Hàm tải danh sách hãng
@@ -111,9 +111,7 @@
                         ];
                         if (canEdit) {
                             row.push('<button class="btn btn-success edit-brand" data-brand-id="' + brand.maHang + '">Chỉnh sửa</button>');
-                        } else {
-                            row.push(''); // Nếu không có quyền, cột trống
-                        }
+                        } 
                         if (canDelete) {
                             row.push('<button class="btn btn-danger delete-brand" data-brand-id="' + brand.maHang + '">Xóa</button>');
                         } else {

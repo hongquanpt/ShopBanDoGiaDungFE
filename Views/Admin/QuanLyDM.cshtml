@@ -75,13 +75,13 @@
 
         // Ẩn các nút hoặc cột không có quyền
         if (!canAdd) {
-            $('#addCategoryBtn').hide();
+            $('#addCategoryBtn').closest('th, td').remove();
         }
         if (!canEdit) {
-            $('.edit-column').hide();
+            $('.edit-column').closest('th, td').remove();
         }
         if (!canDelete) {
-            $('.delete-column').hide();
+            $('.delete-column').closest('th, td').remove();
         }
 
         // Hàm tải danh sách danh mục
@@ -99,9 +99,17 @@
                         var row = [
                             category.maDanhMuc,
                             category.tenDanhMuc,
-                            canEdit ? '<button class="btn btn-success edit-category" data-category-id="' + category.maDanhMuc + '">Chỉnh sửa</button>' : '',
-                            canDelete ? '<button class="btn btn-danger delete-category" data-category-id="' + category.maDanhMuc + '">Xóa</button>' : ''
+
+                           
                         ];
+                        if (canEdit) {
+                            row.push('<button class="btn btn-success edit-category" data-category-id="' + category.maDanhMuc + '">Chỉnh sửa</button>');
+                        }
+                        if (canDelete) {
+                            row.push('<button class="btn btn-danger delete-category" data-category-id="' + category.maDanhMuc + '">Xóa</button>');
+                        } else {
+                            row.push('');
+                        }
                         dataTable.row.add(row);
                     });
 

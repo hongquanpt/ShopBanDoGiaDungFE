@@ -227,15 +227,15 @@
 
                 if (!canEdit) {
                    
-                    $('.role-select').hide(); // Ẩn cột xác nhận nếu không có quyền sửa
-                    $('#manageRolesButton').hide();
+                    $('.role-select').closest('th, td').remove();// Ẩn cột xác nhận nếu không có quyền sửa
+                    $('#manageRolesButton').closest('th, td').remove();
                 }
                 if (!canAdd) {
                    
-                    $('#addUserButton').hide(); // Ẩn cột hoàn thành nếu không có quyền thêm
+                    $('#addUserButton').closest('th, td').remove(); // Ẩn cột hoàn thành nếu không có quyền thêm
                 }
                 if (!canDelete) {
-                    $('.cancel-column').hide(); // Ẩn cột hủy nếu không có quyền xóa
+                    $('.cancel-column').closest('th, td').remove(); // Ẩn cột hủy nếu không có quyền xóa
                 }
                 // Hàm để gọi API với token
                 const apiCall = async (url, method = 'GET', data = null) => {
