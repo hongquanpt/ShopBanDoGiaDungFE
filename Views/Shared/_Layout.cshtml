@@ -2,6 +2,7 @@
 @inject IHttpContextAccessor HttpContextAccessor
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Online Shop</title>
 
@@ -15,6 +16,7 @@
 
     <!-- Chỉ CSS, không JS ở đây để tránh lỗi load trước -->
 </head>
+
 <body>
     <div class="header">
         <div class="top-header">
@@ -62,7 +64,8 @@
 
                 <div class="header-bottom-right">
                     <div class="account dropdown">
-                        <a href="#" id="userAccount" class="dropdown-toggle" data-toggle="dropdown" style="cursor: pointer;">
+                        <a href="#" id="userAccount" class="dropdown-toggle" data-toggle="dropdown"
+                            style="cursor: pointer;">
                             <span> </span>TÀI KHOẢN
                         </a>
                         <ul class="dropdown-menu" id="userMenu" style="display: none;">
@@ -82,7 +85,8 @@
                     </div>
                     <div class="cart" style="position: relative;">
                         <a href="/Cart/Index" id="cartLink"><span> </span>GIỎ HÀNG</a>
-                        <div id="dot-cart" style="color: red; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; position: absolute; top: -5px; right: -10px;">
+                        <div id="dot-cart"
+                            style="color: red; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; position: absolute; top: -5px; right: -10px;">
                         </div>
                     </div>
 
@@ -100,7 +104,8 @@
                             <i style="font-size:18px;color:#F97E76; cursor: pointer;" class="fas fa-sign-out-alt"></i>
                         </div>
                         <div>
-                            <a href="/Admin/Index" id="adminLinkFooter" style="display: none; font-size:16px; margin-left: 155px;">
+                            <a href="/Admin/Index" id="adminLinkFooter"
+                                style="display: none; font-size:16px; margin-left: 155px;">
                                 VỀ TRANG ADMIN
                             </a>
                             <i style="font-size:18px;color:#F97E76; cursor: pointer;" class="fas fa-sign-out-alt"></i>
@@ -127,9 +132,11 @@
     </div>
 
     <!-- Ô chat -->
-    <div id="chatBox" style="display: none; position: fixed; bottom: 70px; right: 10px; width: 300px; border: 1px solid #ccc; padding: 10px; background: white;">
+    <div id="chatBox"
+        style="display: none; position: fixed; bottom: 70px; right: 10px; width: 300px; border: 1px solid #ccc; padding: 10px; background: white;">
         <h5>Chat với Admin</h5>
-        <div id="chatMessages" style="height: 200px; overflow-y: scroll; border: 1px solid #ddd; margin-bottom: 10px; padding: 5px;"></div>
+        <div id="chatMessages"
+            style="height: 200px; overflow-y: scroll; border: 1px solid #ddd; margin-bottom: 10px; padding: 5px;"></div>
         <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." style="width: 100%; padding: 5px;">
         <button id="sendButton" style="margin-top: 5px; width: 100%;">Gửi</button>
     </div>
@@ -173,8 +180,9 @@
                     </ul>
                 </div>
                 <div style="width:75%;">
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.649793342786!2d105.78431471488373!3d21.04669418598872!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab2d88bb4195%3A0x3006e474cce20274!2zSOG7jWMgdmnhu4duIEvhu7kgdGh14bqtdCBRdcOibiBz4bux!5e0!3m2!1svi!2s!4v1670420855037!5m2!1svi!2s"
-                            height="450" style="border:0;width:100%" allowfullscreen="" loading="lazy"></iframe>
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.649793342786!2d105.78431471488373!3d21.04669418598872!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab2d88bb4195%3A0x3006e474cce20274!2zSOG7jWMgdmnhu4duIEvhu7kgdGh14bqtdCBRdcOibiBz4bux!5e0!3m2!1svi!2s!4v1670420855037!5m2!1svi!2s"
+                        height="450" style="border:0;width:100%" allowfullscreen="" loading="lazy"></iframe>
                 </div>
             </div>
         </div>
@@ -187,7 +195,7 @@
     <script src="~/js/signalr.min.js"></script>
 
     <script>
-                document.getElementById("chatIcon").addEventListener("click", () => {
+        document.getElementById("chatIcon").addEventListener("click", () => {
             const chatBox = document.getElementById("chatBox");
             if (chatBox.style.display === "none") {
                 chatBox.style.display = "block";
@@ -196,23 +204,23 @@
             }
         });
 
-        console.log("Script start - checking token");
+
 
         var token = localStorage.getItem('token');
-        console.log("Token:", token);
+
 
         if (!token) {
-            console.log("No token found, will redirect to /Access/Login");
+
             // Nếu không thấy log này, nghĩa là script không chạy hoặc bị lỗi trước đó
             window.location.href = '/Access/Login';
         } else {
-            console.log("Token found, decoding...");
+
             var decodedToken;
             try {
                 decodedToken = jwt_decode(token);
-                console.log("Decoded token:", decodedToken);
+
             } catch (e) {
-                console.error("Error decoding token:", e);
+
                 // Nếu lỗi ở đây, script dừng tại đây
                 localStorage.removeItem('token');
                 window.location.href = '/Access/Login';
@@ -221,7 +229,7 @@
             const userId = decodedToken.nameid;
             const adminId = 23;
 
-            console.log("Setting up SignalR connection...");
+
             const connection = new signalR.HubConnectionBuilder()
                 .withUrl("https://localhost:7248/chathub")
                 .build();
@@ -234,23 +242,23 @@
 
                 // Lấy lịch sử tin nhắn
                 const messagesUrl = `https://localhost:7248/api/Chat/messages/${userId}`;
-                console.log("Fetching messages from:", messagesUrl);
+
                 fetch(messagesUrl, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 })
                     .then(res => {
-                        console.log("Messages fetch response:", res);
+
                         return res.json();
                     })
                     .then(data => {
-                        console.log("Messages data:", data);
+
                         const chatMessages = document.getElementById("chatMessages");
                         chatMessages.innerHTML = "";
-                                data.forEach(msg => {
-            const div = document.createElement("div");
-            div.textContent = (msg.senderId == userId ? "Bạn" : "Admin") + ": " + msg.content;
-            chatMessages.appendChild(div);
-        });
+                        data.forEach(msg => {
+                            const div = document.createElement("div");
+                            div.textContent = (msg.senderId == userId ? "Bạn" : "Admin") + ": " + msg.content;
+                            chatMessages.appendChild(div);
+                        });
 
                         chatMessages.scrollTop = chatMessages.scrollHeight;
                     })
@@ -258,17 +266,17 @@
 
             }).catch(err => console.error("SignalR connection error:", err));
 
-                    connection.on("ReceiveMessage", (fromUser, message) => {
-            console.log("Received message from:", fromUser, "message:", message);
-            const chatMessages = document.getElementById("chatMessages");
-            const div = document.createElement("div");
+            connection.on("ReceiveMessage", (fromUser, message) => {
+                console.log("Received message from:", fromUser, "message:", message);
+                const chatMessages = document.getElementById("chatMessages");
+                const div = document.createElement("div");
 
-            // So sánh fromUser với userId (chuyển userId sang string nếu cần)
-            div.textContent = (fromUser == userId.toString() ? "Bạn" : "Admin") + ": " + message;
+                // So sánh fromUser với userId (chuyển userId sang string nếu cần)
+                div.textContent = (fromUser == userId.toString() ? "Bạn" : "Admin") + ": " + message;
 
-            chatMessages.appendChild(div);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
+                chatMessages.appendChild(div);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
 
 
             document.getElementById("sendButton").addEventListener("click", () => {
@@ -375,4 +383,5 @@
         }
     </script>
 </body>
+
 </html>

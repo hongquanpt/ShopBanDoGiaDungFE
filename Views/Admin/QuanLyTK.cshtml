@@ -10,19 +10,20 @@
         <!-- Main content -->
         <section class="content">
             <!-- Nút Thêm Tài Khoản -->
-          
+
 
             <div class="container-fluid">
                 <div class="row">
                     <!-- Nút quản lý chức vụ bên ngoài bảng -->
-                               
+
                     <div class="col-12">
 
 
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <label class="card-title">Quản lý tài khoản</label>
-                                <button style="margin-left:70%" class="btn btn-success" id="addUserButton">Thêm Tài Khoản</button>
+                                <button style="margin-left:70%" class="btn btn-success" id="addUserButton">Thêm Tài
+                                    Khoản</button>
                             </div>
 
 
@@ -51,7 +52,7 @@
                                 <!-- /.card-body -->
                             </div>
                             <!-- /.card-header -->
-                           @*   <button class="btn btn-secondary" id="manageRolesButton">Quản lý quyền của từng chức vụ</button> *@
+                            @*   <button class="btn btn-secondary" id="manageRolesButton">Quản lý quyền của từng chức vụ</button> *@
                             <!-- /.card-body -->
                         </div>
                         <!-- /.card -->
@@ -70,7 +71,8 @@
 </div>
 
 <!-- Modal Quản Lý Roles của Người Dùng -->
-<div class="modal fade" id="permissionModal" tabindex="-1" role="dialog" aria-labelledby="permissionModalLabel" aria-hidden="true">
+<div class="modal fade" id="permissionModal" tabindex="-1" role="dialog" aria-labelledby="permissionModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <!-- Tiêu đề Modal -->
@@ -95,7 +97,8 @@
 </div>
 
 <!-- Modal Quản Lý Chức Vụ và Quyền -->
-<div class="modal fade" id="manageRolesModal" tabindex="-1" role="dialog" aria-labelledby="manageRolesModalLabel" aria-hidden="true">
+<div class="modal fade" id="manageRolesModal" tabindex="-1" role="dialog" aria-labelledby="manageRolesModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <!-- Tiêu đề Modal -->
@@ -119,7 +122,8 @@
     </div>
 </div>
 <!-- Modal Thêm Tài Khoản Mới -->
-<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel" aria-hidden="true">
+<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <!-- Tiêu đề Modal -->
@@ -148,13 +152,14 @@
                     </div>
                     <div class="form-group">
                         <label for="userPhone">Số Điện Thoại</label>
-                        <input type="text" class="form-control" id="userPhone" placeholder="Nhập số điện thoại" required>
+                        <input type="text" class="form-control" id="userPhone" placeholder="Nhập số điện thoại"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="userEmail">Email</label>
                         <input type="email" class="form-control" id="userEmail" placeholder="Nhập email" required>
                     </div>
-                   
+
                 </form>
             </div>
             <!-- Chân Modal -->
@@ -211,7 +216,7 @@
                 // Kiểm tra quyền "Xem"
                 var canView = permissions.includes("QuanLyTaiKhoan:Xem");
 
-              
+
 
                 // Kiểm tra quyền truy cập trang
                 if (!canView) {
@@ -226,12 +231,12 @@
                 var canDelete = permissions.includes("QuanLyTaiKhoan:Xoa");
 
                 if (!canEdit) {
-                   
+
                     $('.role-select').closest('th, td').remove();// Ẩn cột xác nhận nếu không có quyền sửa
                     $('#manageRolesButton').closest('th, td').remove();
                 }
                 if (!canAdd) {
-                   
+
                     $('#addUserButton').closest('th, td').remove(); // Ẩn cột hoàn thành nếu không có quyền thêm
                 }
                 if (!canDelete) {
@@ -393,7 +398,7 @@
                             try {
                                 // Gửi danh sách roleIds lên API (sử dụng POST)
                                 await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: selectedRoles.map(id => parseInt(id)) });
-                                
+
                                 loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
                             } catch (error) {
                                 console.error('Lỗi khi cập nhật chức vụ:', error);
@@ -484,9 +489,9 @@
                                 "QuanLyDanhMuc": "Quản lý danh mục",
                                 "QuanLyHang": "Quản lý hãng",
                                 "QuanLyDonHang": "Quản lý đơn hàng",
-                                "ThongKe":"Thống kê",
+                                "ThongKe": "Thống kê",
                                 "Access": "Truy cập",
-                                "QuanLyChucVu":"Quản lý chức vụ"
+                                "QuanLyChucVu": "Quản lý chức vụ"
                             };
                             return renameMap[name] || name;
                         };
@@ -592,7 +597,7 @@
 
                         await Promise.all(permissionPromises);
 
-                        
+
                         $('#permissionModal').modal('hide');
                         loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
 
@@ -817,7 +822,7 @@
 
                         await Promise.all(permissionPromises);
 
-                    
+
                         $('#manageRolesModal').modal('hide');
                         loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
                     } catch (error) {

@@ -20,7 +20,8 @@
                 <div class="card-body">
                     <div class="form-group">
                         <label for="tenhangmoi">Tên danh mục:</label>
-                        <input type="text" class="form-control" id="tenhangmoi" name="Moi" placeholder="Nhập tên danh mục">
+                        <input type="text" class="form-control" id="tenhangmoi" name="Moi"
+                            placeholder="Nhập tên danh mục">
                     </div>
                     <!-- Hidden input để lưu trữ ID của danh mục -->
                     <input type="hidden" id="MaDanhMuc" value="">
@@ -71,7 +72,7 @@
 
             return id;
         }
-       
+
         // Lấy ID từ URL
         var categoryId = getLastSegmentAsNumber();
         console.log(categoryId);
@@ -114,12 +115,12 @@
                 'Authorization': 'Bearer ' + token
             },
             success: function (res) {
-            
-              
-                    console.log("Dữ liệu", res); // Sửa lại biến res.data
-                    // Điền dữ liệu vào form
-                    $('#tenhangmoi').val(res.tendm); // Giả sử API trả về trường 'tenDanhMuc'
-              
+
+
+                console.log("Dữ liệu", res); // Sửa lại biến res.data
+                // Điền dữ liệu vào form
+                $('#tenhangmoi').val(res.tendm); // Giả sử API trả về trường 'tenDanhMuc'
+
             },
             error: function (error) {
                 console.error('Lỗi khi lấy thông tin danh mục:', error);

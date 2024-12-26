@@ -186,7 +186,7 @@
         });
     }
 
- 
+
     function loadCategoriesFromStorage() {
         const categoriesData = JSON.parse(localStorage.getItem("categoriesData")) || [];
         const selectedCategories = JSON.parse(localStorage.getItem("selectedCategories")) || [];
@@ -211,7 +211,7 @@
     $(document).ready(function () {
         loadProducts();
         loadCategoriesFromStorage();
-       
+
         updateCartCount();
     });
 </script>

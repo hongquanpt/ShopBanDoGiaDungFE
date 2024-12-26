@@ -12,7 +12,8 @@
                         <div class="card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <label class="card-title">Quản lý sản phẩm</label>
-                                <button style="margin-left:69%" id="addProductBtn" class="btn btn-success">Thêm sản phẩm mới</button>
+                                <button style="margin-left:69%" id="addProductBtn" class="btn btn-success">Thêm sản phẩm
+                                    mới</button>
                             </div>
                             <div class="card-body">
                                 <table id="productTable" class="table table-bordered table-striped">
@@ -36,7 +37,7 @@
                             </div>
                         </div>
                     </div>
-                   
+
                 </div>
             </div>
         </section>
@@ -110,11 +111,11 @@
 
                         if (canEdit) {
                             row += '<td><a href="/Admin/SuaSP/' + item.maSp + '" class="btn btn-success">Chỉnh sửa</a></td>';
-                        } 
+                        }
 
                         if (canDelete) {
                             row += '<td><button class="btn btn-danger delete-product" data-id="' + item.maSp + '">Xóa</button></td>';
-                        } 
+                        }
                         row += '</tr>';
                         tbody.append(row);
                     });

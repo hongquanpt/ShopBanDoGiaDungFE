@@ -73,6 +73,7 @@
 
                 // Hiển thị sản phẩm
                 response.sanpham.forEach(function (product) {
+                    console.log(product);
                     var productHtml = `
                                 <div class="col-md-4 chain-grid" style="min-height: 406.29px;">
                                     <a href="/Home/ProductDetail/${product.maSp}">
