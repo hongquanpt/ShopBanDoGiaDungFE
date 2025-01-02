@@ -88,7 +88,7 @@
         // Hàm tải danh sách sản phẩm
         function loadProducts() {
             $.ajax({
-                url: 'https://localhost:7248/api/Product/QuanLySP', // Thay URL của bạn
+                url: 'https://shopdogiadungapi.onrender.com/api/Product/QuanLySP', // Thay URL của bạn
                 method: 'GET',
                 dataType: 'json',
                 beforeSend: function (xhr) {
@@ -162,7 +162,7 @@
                 var productId = $(this).data('id');
                 if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
                     $.ajax({
-                        url: 'https://localhost:7248/api/Product/XoaSP/' + productId,
+                        url: 'https://shopdogiadungapi.onrender.com/api/Product/XoaSP/' + productId,
                         method: 'DELETE',
                         success: function () {
                             alert('Xóa sản phẩm thành công.');

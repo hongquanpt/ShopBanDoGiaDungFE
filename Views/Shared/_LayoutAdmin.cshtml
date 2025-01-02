@@ -174,7 +174,7 @@
 
                 // Lấy danh sách user
 
-                fetch('https://localhost:7248/api/Chat/all', {
+                fetch('https://shopdogiadungapi.onrender.com/api/Chat/all', {
                     headers: authHeaders()
                 })
                     .then(res => {
@@ -196,7 +196,7 @@
 
                 // Kết nối SignalR
                 const connection = new signalR.HubConnectionBuilder()
-                    .withUrl("https://localhost:7248/chathub")
+                    .withUrl("https://shopdogiadungapi.onrender.com/chathub")
                     .build();
 
                 connection.start()
@@ -226,7 +226,7 @@
                         .then(() => console.log("Registered admin to user group:", currentUserId))
                         .catch(err => console.error("Error registering admin:", err));
 
-                    const msgUrl = `https://localhost:7248/api/Chat/messages/${currentUserId}`;
+                    const msgUrl = `https://shopdogiadungapi.onrender.com/api/Chat/messages/${currentUserId}`;
                     console.log("Fetching messages from:", msgUrl);
                     fetch(msgUrl, { headers: authHeaders() })
                         .then(res => {
@@ -266,7 +266,7 @@
                         .catch(err => console.error("Error sending via SignalR:", err));
 
                     // Lưu tin nhắn vào DB
-                    const sendUrl = `https://localhost:7248/api/Chat/${currentUserId}/send`;
+                    const sendUrl = `https://shopdogiadungapi.onrender.com/api/Chat/${currentUserId}/send`;
                     console.log("Sending message to API:", sendUrl);
                     fetch(sendUrl, {
                         method: 'POST',
@@ -298,7 +298,7 @@
 
                     // Lấy đơn hàng chờ xử lý
                     $.ajax({
-                        url: 'https://localhost:7248/api/Order/pending',
+                        url: 'https://shopdogiadungapi.onrender.com/api/Order/pending',
                         method: 'GET',
                         success: function (response) {
                             console.log("Pending orders:", response);

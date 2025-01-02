@@ -218,7 +218,7 @@
         // Hàm tải tất cả đơn hàng
         function loadAllOrders(page = 1, pageSize = 1000) {
             $.ajax({
-                url: `https://localhost:7248/api/Order/orders?page=${page}&pageSize=${pageSize}`,
+                url: `https://shopdogiadungapi.onrender.com/api/Order/orders?page=${page}&pageSize=${pageSize}`,
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -233,7 +233,7 @@
         // Hàm tải đơn hàng theo trạng thái
         function loadOrdersByStatus(status, tableSelector, page = 1, pageSize = 1000) {
             $.ajax({
-                url: `https://localhost:7248/api/Order/orders?tinhTrang=${status}&page=${page}&pageSize=${pageSize}`,
+                url: `https://shopdogiadungapi.onrender.com/api/Order/orders?tinhTrang=${status}&page=${page}&pageSize=${pageSize}`,
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -347,7 +347,7 @@
             var orderId = $(this).data('id');
 
             $.ajax({
-                url: `https://localhost:7248/api/Order/orders/${orderId}/details`, // API lấy chi tiết đơn hàng
+                url: `https://shopdogiadungapi.onrender.com/api/Order/orders/${orderId}/details`, // API lấy chi tiết đơn hàng
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -407,7 +407,7 @@
 
             if (confirm('Bạn có chắc chắn muốn xác nhận đơn hàng này?')) {
                 $.ajax({
-                    url: `https://localhost:7248/api/Order/orders/confirm/${orderId}`, // API xác nhận đơn hàng
+                    url: `https://shopdogiadungapi.onrender.com/api/Order/orders/confirm/${orderId}`, // API xác nhận đơn hàng
                     method: 'POST',
                     success: function () {
                         alert('Xác nhận đơn hàng thành công');
@@ -431,7 +431,7 @@
 
             if (confirm('Bạn có chắc chắn muốn hoàn thành đơn hàng này?')) {
                 $.ajax({
-                    url: `https://localhost:7248/api/Order/orders/ship/${orderId}`, // API hoàn thành đơn hàng
+                    url: `https://shopdogiadungapi.onrender.com/api/Order/orders/ship/${orderId}`, // API hoàn thành đơn hàng
                     method: 'POST',
                     success: function () {
                         alert('Đơn hàng đã được đánh dấu hoàn thành');
@@ -455,7 +455,7 @@
 
             if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
                 $.ajax({
-                    url: `https://localhost:7248/api/Order/orders/cancel/${orderId}`, // API hủy đơn hàng
+                    url: `https://shopdogiadungapi.onrender.com/api/Order/orders/cancel/${orderId}`, // API hủy đơn hàng
                     method: 'POST',
                     success: function () {
                         alert('Đơn hàng đã được hủy');

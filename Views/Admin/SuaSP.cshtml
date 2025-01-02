@@ -203,75 +203,82 @@
         // Lấy productId từ URL
         var pathArray = window.location.pathname.split('/');
         var productId = pathArray[pathArray.length - 1];
-
-        // Gọi API để lấy danh sách danh mục sản phẩm và điền vào select #category
-        $.ajax({
-            url: 'https://localhost:7248/api/Category/danhmucs',
-            method: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                console.log("dm", data)
-                data.data.forEach(function (category) {
-                    $('#category').append(new Option(category.tenDanhMuc, category.maDanhMuc));
-                });
-            },
-            error: function (xhr, status, error) {
-                console.error('Lỗi khi lấy danh sách danh mục:', xhr.responseText);
-                alert('Không thể tải danh sách danh mục.');
-            }
-        });
-
-        // Gọi API để lấy danh sách hãng sản xuất và điền vào select #brand
-        $.ajax({
-            url: 'https://localhost:7248/api/Brand/hangs',
-            method: 'GET',
-            dataType: 'json',
-            success: function (data) {
-                console.log("hang", data)
-                data.data.forEach(function (brand) {
-                    $('#brand').append(new Option(brand.tenHang, brand.maHang));
-                });
-            },
-            error: function (xhr, status, error) {
-                console.error('Lỗi khi lấy danh sách hãng sản xuất:', xhr.responseText);
-                alert('Không thể tải danh sách hãng sản xuất.');
-            }
-        });
         console.log("xxx", productId);
 
-        // Gọi API để lấy thông tin sản phẩm
-        $.ajax({
-            url: `https://localhost:7248/api/HomeControllerAPI/ProductDetail/${productId}`,
-            method: 'GET',
-            dataType: 'json',
+        // Function to load categories
+        function loadCategories() {
+            return $.ajax({
+                url: 'https://shopdogiadungapi.onrender.com/api/Category/danhmucs',
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    console.log("dm", data);
+                    data.data.forEach(function (category) {
+                        $('#category').append(new Option(category.tenDanhMuc, category.maDanhMuc));
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.error('Lỗi khi lấy danh sách danh mục:', xhr.responseText);
+                    alert('Không thể tải danh sách danh mục.');
+                }
+            });
+        }
 
-            success: function (data) {
-                console.log("sp", data)
-                // Điền dữ liệu sản phẩm vào các trường form
-                $('#productId').val(data.sanpham.maSp);
-                $('#productName').val(data.sanpham.tenSp);
-                $('#category').val(data.sanpham.maDM); // Gán giá trị danh mục
-                $('#brand').val(data.sanpham.maH);       // Gán giá trị hãng sản xuất
-                $('#description').val(data.sanpham.moTa);
-                $('#price').val(data.sanpham.giaTien);
-                $('#quantitySold').val(data.sanpham.soLuongDaBan);
-                $('#quantityStock').val(data.sanpham.soLuongTrongKho);
+        // Function to load brands
+        function loadBrands() {
+            return $.ajax({
+                url: 'https://shopdogiadungapi.onrender.com/api/Brand/hangs',
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    console.log("hang", data);
+                    data.data.forEach(function (brand) {
+                        $('#brand').append(new Option(brand.tenHang, brand.maHang));
+                    });
+                },
+                error: function (xhr, status, error) {
+                    console.error('Lỗi khi lấy danh sách hãng sản xuất:', xhr.responseText);
+                    alert('Không thể tải danh sách hãng sản xuất.');
+                }
+            });
+        }
 
-                // Thiết lập src cho ảnh hiện tại
-                $('#currentImage1').attr('src', `${data.sanpham.anh1}`).show();
-                $('#currentImage2').attr('src', `${data.sanpham.anh2}`).show();
-                $('#currentImage3').attr('src', `${data.sanpham.anh3}`).show();
-                $('#currentImage4').attr('src', `${data.sanpham.anh4}`).show();
-                $('#currentImage5').attr('src', `${data.sanpham.anh5}`).show();
-                $('#currentImage6').attr('src', `${data.sanpham.anh6}`).show();
+        // Load categories and brands first
+        $.when(loadCategories(), loadBrands()).done(function () {
+            // Now load product data
+            $.ajax({
+                url: `https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/ProductDetail/${productId}`,
+                method: 'GET',
+                dataType: 'json',
 
-                // Tiếp tục cho các ảnh khác tương tự
-            },
-            error: function (xhr, status, error) {
-                console.error('Lỗi khi lấy thông tin sản phẩm:', xhr.responseText);
-                alert('Không thể tải thông tin sản phẩm. Vui lòng thử lại sau.');
-                window.location = '@Url.Action("QuanLySP", "Admin")';
-            }
+                success: function (data) {
+                    console.log("sp", data);
+                    // Điền dữ liệu sản phẩm vào các trường form
+                    $('#productId').val(data.sanpham.maSp);
+                    $('#productName').val(data.sanpham.tenSp);
+                    $('#description').val(data.sanpham.moTa);
+                    $('#price').val(data.sanpham.giaTien);
+                    $('#quantitySold').val(data.sanpham.soLuongDaBan);
+                    $('#quantityStock').val(data.sanpham.soLuongTrongKho);
+
+                    // Thiết lập src cho ảnh hiện tại
+                    $('#currentImage1').attr('src', `${data.sanpham.anh1}`).show();
+                    $('#currentImage2').attr('src', `${data.sanpham.anh2}`).show();
+                    $('#currentImage3').attr('src', `${data.sanpham.anh3}`).show();
+                    $('#currentImage4').attr('src', `${data.sanpham.anh4}`).show();
+                    $('#currentImage5').attr('src', `${data.sanpham.anh5}`).show();
+                    $('#currentImage6').attr('src', `${data.sanpham.anh6}`).show();
+
+                    // Thiết lập giá trị cho select sau khi các option đã được thêm
+                    $('#category').val(data.sanpham.maDanhMuc);
+                    $('#brand').val(data.sanpham.maHang);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Lỗi khi lấy thông tin sản phẩm:', xhr.responseText);
+                    alert('Không thể tải thông tin sản phẩm. Vui lòng thử lại sau.');
+                    window.location = '@Url.Action("QuanLySP", "Admin")';
+                }
+            });
         });
 
         // Xử lý sự kiện thay đổi của input ảnh để hiển thị ảnh xem trước
@@ -314,7 +321,7 @@
             var formData = new FormData(this);
             // Gửi yêu cầu PUT để cập nhật sản phẩm
             $.ajax({
-                url: `https://localhost:7248/api/Product/SuaSP`,
+                url: `https://shopdogiadungapi.onrender.com/api/Product/SuaSP`,
                 method: 'PUT',
                 data: formData,
                 contentType: false,

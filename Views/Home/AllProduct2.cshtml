@@ -49,7 +49,7 @@
     function loadProducts() {
         const params = getQueryParams();
         $.ajax({
-            url: `https://localhost:7248/api/HomeControllerAPI/Search?search=${params.search}&idCategories=${params.idCategories}&idHangs=${params.idHangs}&pageIndex=${params.pageIndex}&pageSize=${params.pageSize}&maxPrice=${params.maxPrice}&minPrice=${params.minPrice}&orderPrice=tang`,
+            url: `https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/Search?search=${params.search}&idCategories=${params.idCategories}&idHangs=${params.idHangs}&pageIndex=${params.pageIndex}&pageSize=${params.pageSize}&maxPrice=${params.maxPrice}&minPrice=${params.minPrice}&orderPrice=tang`,
             type: "GET",
             headers: { "Authorization": `Bearer ${token}` },
             success: function (response) {
@@ -125,7 +125,7 @@
 
         // Gọi API để kiểm tra trạng thái hàng trước khi thêm
         $.ajax({
-            url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
+            url: 'https://shopdogiadungapi.onrender.com/api/CartControllerAPI/AddItem',
             type: 'POST',
             dataType: 'json',
             contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON

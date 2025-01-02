@@ -112,7 +112,7 @@
         // Hàm tải danh sách danh mục
         function loadCategories(page = 1) {
             $.ajax({
-                url: `https://localhost:7248/api/Category/danhmucs?page=${page}&pageSize=10&_=${new Date().getTime()}`,
+                url: `https://shopdogiadungapi.onrender.com/api/Category/danhmucs?page=${page}&pageSize=10&_=${new Date().getTime()}`,
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -175,7 +175,7 @@
                 }
 
                 $.ajax({
-                    url: 'https://localhost:7248/api/Category/danhmucs',
+                    url: 'https://shopdogiadungapi.onrender.com/api/Category/danhmucs',
                     method: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
@@ -204,7 +204,7 @@
                 var categoryId = $(this).data('category-id');
                 if (confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
                     $.ajax({
-                        url: 'https://localhost:7248/api/Category/danhmucs/' + categoryId,
+                        url: 'https://shopdogiadungapi.onrender.com/api/Category/danhmucs/' + categoryId,
                         method: 'DELETE',
                         success: function () {
                             alert('Xóa danh mục thành công.');

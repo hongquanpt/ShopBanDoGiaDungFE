@@ -89,7 +89,7 @@
 
         // Gọi API để lấy thông tin chức vụ
         $.ajax({
-            url: `https://localhost:7248/api/ChucVu/roles1/${roleId}`, // URL API để lấy thông tin chức vụ
+            url: `https://shopdogiadungapi.onrender.com/api/ChucVu/roles1/${roleId}`, // URL API để lấy thông tin chức vụ
             method: 'GET',
             contentType: 'application/json',
             dataType: 'json',
@@ -154,7 +154,7 @@
 
         // Gửi yêu cầu cập nhật chức vụ
         $.ajax({
-            url: `https://localhost:7248/api/ChucVu/${id}`,
+            url: `https://shopdogiadungapi.onrender.com/api/ChucVu/${id}`,
             method: 'PUT',
             contentType: 'application/json',
             dataType: 'json',

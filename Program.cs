@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 
 using System.Security.Authentication;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +25,7 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Linh hoạt hơn
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
@@ -77,6 +78,18 @@ app.Use(async (context, next) =>
     context.Response.Headers.Add("X-Frame-Options", "DENY");
     context.Response.Headers.Add("Referrer-Policy", "no-referrer");
     await next();
+});
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (CryptographicException)
+    {
+        context.Response.Cookies.Delete(".AspNetCore.Session"); // Xóa session cookie bị lỗi
+        context.Response.Redirect(context.Request.Path); // Reload lại trang
+    }
 });
 
 // Cấu hình các tuyến ứng dụng

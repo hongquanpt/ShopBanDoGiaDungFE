@@ -66,7 +66,7 @@
             const orderPrice = $("#select-order-price").val() || "notorder";
 
             $.ajax({
-                url: `https://localhost:7248/api/HomeControllerAPI/AllProduct?pageIndex=${pageIndex}&pageSize=${pageSize}&maxPrice=${maxPrice}&minPrice=${minPrice}&orderPrice=${orderPrice}`,
+                url: `https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/AllProduct?pageIndex=${pageIndex}&pageSize=${pageSize}&maxPrice=${maxPrice}&minPrice=${minPrice}&orderPrice=${orderPrice}`,
                 method: 'GET',
                 dataType: 'json',
                 beforeSend: function (xhr) {
@@ -126,7 +126,7 @@
         // Hàm thêm sản phẩm vào giỏ hàng
         function addItem(maSp) {
             $.ajax({
-                url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
+                url: 'https://shopdogiadungapi.onrender.com/api/CartControllerAPI/AddItem',
                 data: { productId: maSp },
                 type: 'POST',
                 dataType: 'json',

@@ -102,7 +102,7 @@
         // Hàm để tải danh sách đơn hàng
         function loadOrders(pageIndex, pageSize, typeMenu) {
             $.ajax({
-                url: `https://localhost:7248/api/HomeControllerAPI/MyOrder?typeMenu=${typeMenu}&PageIndex=${pageIndex}&PageSize=${pageSize}`,
+                url: `https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/MyOrder?typeMenu=${typeMenu}&PageIndex=${pageIndex}&PageSize=${pageSize}`,
                 type: 'GET',
                 dataType: 'json',
                 headers: { "Authorization": `Bearer ${token}` },
@@ -264,7 +264,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: `https://localhost:7248/api/Order/orders/cancel/${orderId}`,
+                        url: `https://shopdogiadungapi.onrender.com/api/Order/orders/cancel/${orderId}`,
                         type: 'POST',
                         headers: { "Authorization": `Bearer ${token}` },
                         success: function () {
@@ -301,7 +301,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: `https://localhost:7248/api/Order/orders/confirm/${orderId}`,
+                        url: `https://shopdogiadungapi.onrender.com/api/Order/orders/confirm/${orderId}`,
                         type: 'POST',
                         headers: { "Authorization": `Bearer ${token}` },
                         success: function () {
@@ -330,7 +330,7 @@
         // Hàm để xem chi tiết đơn hàng
         window.viewOrderDetail = function (orderId) {
             $.ajax({
-                url: `https://localhost:7248/api/Order/orders/${orderId}/details`,
+                url: `https://shopdogiadungapi.onrender.com/api/Order/orders/${orderId}/details`,
                 type: 'GET',
                 headers: { "Authorization": `Bearer ${token}` },
                 success: function (data) {
