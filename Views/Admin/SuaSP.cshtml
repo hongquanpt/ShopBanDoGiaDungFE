@@ -208,7 +208,7 @@
         // Function to load categories
         function loadCategories() {
             return $.ajax({
-                url: 'https://shopdogiadungapi.onrender.com/api/Category/danhmucs',
+                url: 'https://localhost:7248/api/Category/danhmucs',
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -227,7 +227,7 @@
         // Function to load brands
         function loadBrands() {
             return $.ajax({
-                url: 'https://shopdogiadungapi.onrender.com/api/Brand/hangs',
+                url: 'https://localhost:7248/api/Brand/hangs',
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -247,7 +247,7 @@
         $.when(loadCategories(), loadBrands()).done(function () {
             // Now load product data
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/ProductDetail/${productId}`,
+                url: `https://localhost:7248/api/HomeControllerAPI/ProductDetail/${productId}`,
                 method: 'GET',
                 dataType: 'json',
 
@@ -321,7 +321,7 @@
             var formData = new FormData(this);
             // Gửi yêu cầu PUT để cập nhật sản phẩm
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/Product/SuaSP`,
+                url: `https://localhost:7248/api/Product/SuaSP`,
                 method: 'PUT',
                 data: formData,
                 contentType: false,
@@ -333,7 +333,7 @@
                     }
                 },
                 success: function () {
-                    alert('Cập nhật sản phẩm thành công.');
+                   
                     window.location = '@Url.Action("QuanLySP", "Admin")';
                 },
                 error: function (xhr, status, error) {

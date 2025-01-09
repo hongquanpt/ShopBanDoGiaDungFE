@@ -121,6 +121,10 @@ namespace ShopBanDoGiaDung.Controllers
             return PartialView();
         }
         #endregion
+        public IActionResult Log()
+        {
+            return View();
+        }
         #endregion
         #region Thống kê
         #region Thống kê doanh số bán ra

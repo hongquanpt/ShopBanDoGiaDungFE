@@ -89,7 +89,7 @@
 
         // Gọi API để lấy thông tin chức vụ
         $.ajax({
-            url: `https://shopdogiadungapi.onrender.com/api/ChucVu/roles1/${roleId}`, // URL API để lấy thông tin chức vụ
+            url: `https://localhost:7248/api/ChucVu/roles1/${roleId}`, // URL API để lấy thông tin chức vụ
             method: 'GET',
             contentType: 'application/json',
             dataType: 'json',
@@ -133,19 +133,8 @@
         var decodedToken = jwt_decode(token);
         var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
 
-        var hasAccess = false;
-        if (Array.isArray(roles)) {
-            hasAccess = roles.includes('admin') || roles.includes('manager');
-        } else {
-            hasAccess = roles === 'admin' || roles === 'manager';
-        }
-
-        if (!hasAccess) {
-            alert('Bạn không có quyền truy cập trang này.');
-            window.location.href = '/';
-            return;
-        }
-
+      
+     
         var tenChucVu = $('#tenchucvumoi').val().trim();
         if (tenChucVu === "") {
             alert("Bạn chưa nhập tên chức vụ.");
@@ -154,7 +143,7 @@
 
         // Gửi yêu cầu cập nhật chức vụ
         $.ajax({
-            url: `https://shopdogiadungapi.onrender.com/api/ChucVu/${id}`,
+            url: `https://localhost:7248/api/ChucVu/${id}`,
             method: 'PUT',
             contentType: 'application/json',
             dataType: 'json',

@@ -117,7 +117,7 @@
         // Hàm tải danh sách hãng
         function loadBrands(page = 1) {
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/Brand/hangs?page=${page}&pageSize=100&_=${new Date().getTime()}`,
+                url: `https://localhost:7248/api/Brand/hangs?page=${page}&pageSize=100&_=${new Date().getTime()}`,
                 method: 'GET',
                 dataType: 'json',
                 beforeSend: function (xhr) {
@@ -180,7 +180,7 @@
                 }
 
                 $.ajax({
-                    url: 'https://shopdogiadungapi.onrender.com/api/Brand/hangs',
+                    url: 'https://localhost:7248/api/Brand/hangs',
                     method: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
@@ -210,10 +210,10 @@
                 var brandId = $(this).data('brand-id');
                 if (confirm('Bạn có chắc chắn muốn xóa hãng này?')) {
                     $.ajax({
-                        url: 'https://shopdogiadungapi.onrender.com/api/Brand/hangs/' + brandId,
+                        url: 'https://localhost:7248/api/Brand/hangs/' + brandId,
                         method: 'DELETE',
                         success: function () {
-                            alert('Xóa hãng thành công.');
+                           
                             loadBrands();
                         },
                         error: function (error) {

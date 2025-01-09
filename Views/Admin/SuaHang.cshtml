@@ -104,7 +104,7 @@
         }
         // Gọi API để lấy thông tin hãng sản phẩm
         $.ajax({
-            url: `https://shopdogiadungapi.onrender.com/api/Brand/hangs/${brandId}`, // URL API để lấy thông tin hãng
+            url: `https://localhost:7248/api/Brand/hangs/${brandId}`, // URL API để lấy thông tin hãng
             method: 'GET',
             contentType: 'application/json',
             dataType: 'json',
@@ -176,7 +176,7 @@
 
         // Gửi yêu cầu cập nhật hãng sản phẩm
         $.ajax({
-            url: `https://shopdogiadungapi.onrender.com/api/Brand/hangs/${id}`, // URL API để cập nhật hãng
+            url: `https://localhost:7248/api/Brand/hangs/${id}`, // URL API để cập nhật hãng
             method: 'PUT', // Sử dụng PUT để cập nhật
             contentType: 'application/json', // Gửi dữ liệu dưới dạng JSON
             dataType: 'json',
@@ -196,7 +196,7 @@
                         window.location = '@Url.Action("QuanLyHang", "Admin")';
                     });
                 } else {
-                    alert(res.message || "Sửa hãng không thành công.");
+                   
                 }
             },
             error: function (error) {

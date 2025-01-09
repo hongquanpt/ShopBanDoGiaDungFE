@@ -1,0 +1,119 @@
+﻿@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="wrapper">
+    <div class="content-wrapper">
+        <section class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <!-- Tiêu đề -->
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <label class="card-title">Quản lý nhật ký hệ thống</label>
+                            </div>
+                            <div class="card-body">
+                                <!-- Bảng hiển thị Log -->
+                                <table id="logTable" class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Thời gian</th>
+                                            <th>Mã người dùng</th>
+                                            <th>Hành động</th>
+                                            <th>Nội dung hành động</th>
+                                            <th>Địa chỉ IP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dữ liệu sẽ được thêm vào bằng JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Script để gọi API và hiển thị dữ liệu -->
+<script src="~/new/jquery-3.6.0.min.js"></script>
+<script src="~/Admin/plugins/jquery/jquery.min.js"></script>
+<script src="~/Admin/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="~/Admin/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="~/Admin/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+<script src="~/Admin/plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="~/Admin/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="~/Admin/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="~/Admin/dist/js/adminlte.min.js"></script>
+
+<script src="~/new/jwt-decode.min.js"></script> <!-- nếu cần decode JWT -->
+
+<script>
+    $(document).ready(function () {
+        var token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/Access/Login';
+            return;
+        }
+
+        // Giải mã token để kiểm tra quyền, nếu cần
+        var decodedToken = jwt_decode(token);
+        // var permissions = decodedToken.permissions || [];
+        // Kiểm tra quyền, ví dụ: if (!permissions.includes("XemLog")) { ... }
+
+        // Khởi tạo DataTable
+        var dataTable = $('#logTable').DataTable({
+            "paging": true,
+            "ordering": false,
+            "info": true,
+            "searching": true,
+            "autoWidth": false,
+            "responsive": true,
+            "language": {
+                "paginate": { "next": "Trang sau", "previous": "Trang trước" },
+                "info": "Hiển thị _START_ đến _END_ trong tổng số _TOTAL_ log",
+                "search": "Tìm kiếm:"
+            }
+        });
+
+        function loadLogs(page = 1, pageSize = 100) {
+            $.ajax({
+                url: `https://localhost:7248/api/Log?page=${page}&pageSize=${pageSize}&_=${new Date().getTime()}`,
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function (response) {
+                    dataTable.clear();
+                    response.data.forEach(function (log) {
+                        // Chuyển đổi Timestamp
+                        let timeStr = new Date(log.timestamp).toLocaleString();
+
+                        dataTable.row.add([
+                            log.id,
+                            timeStr,
+                            log.userid,
+                            log.action,
+                            log.objects,
+                            log.ip
+                        ]);
+                    });
+
+                    dataTable.draw();
+                },
+                error: function (error) {
+                    console.error('Lỗi khi lấy log:', error);
+                    alert('Không thể tải danh sách log.');
+                }
+            });
+        }
+
+        // Gọi hàm loadLogs
+        loadLogs();
+    });
+</script>

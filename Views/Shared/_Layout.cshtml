@@ -231,7 +231,7 @@
 
 
             const connection = new signalR.HubConnectionBuilder()
-                .withUrl("https://shopdogiadungapi.onrender.com/chathub")
+                .withUrl("https://localhost:7248/chathub")
                 .build();
 
             connection.start().then(() => {
@@ -241,7 +241,7 @@
                     .catch(err => console.error("Error registering user:", err));
 
                 // Lấy lịch sử tin nhắn
-                const messagesUrl = `https://shopdogiadungapi.onrender.com/api/Chat/messages/${userId}`;
+                const messagesUrl = `https://localhost:7248/api/Chat/messages/${userId}`;
 
                 fetch(messagesUrl, {
                     headers: { 'Authorization': 'Bearer ' + token }
@@ -293,7 +293,7 @@
                     .then(() => console.log("Message sent via SignalR"))
                     .catch(err => console.error("Error sending via SignalR:", err));
 
-                const sendUrl = `https://shopdogiadungapi.onrender.com/api/Chat/${userId}/send`;
+                const sendUrl = `https://localhost:7248/api/Chat/${userId}/send`;
                 console.log("Sending message to API:", sendUrl);
                 fetch(sendUrl, {
                     method: 'POST',

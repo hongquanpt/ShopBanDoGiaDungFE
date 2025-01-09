@@ -164,7 +164,7 @@
         // Hàm tải danh sách chức vụ
         function loadRoles(page = 1) {
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/ChucVu?page=${page}&pageSize=100`,
+                url: `https://localhost:7248/api/ChucVu?page=${page}&pageSize=100`,
                 method: 'GET',
                 dataType: 'json',
                 beforeSend: function (xhr) {
@@ -225,7 +225,7 @@
                 }
 
                 $.ajax({
-                    url: 'https://shopdogiadungapi.onrender.com/api/ChucVu',
+                    url: 'https://localhost:7248/api/ChucVu',
                     method: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
@@ -248,7 +248,7 @@
                 var categoryId = $(this).data('role-id');
                 if (confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
                     $.ajax({
-                        url: 'https://shopdogiadungapi.onrender.com/api/ChucVu/' + categoryId,
+                        url: 'https://localhost:7248/api/ChucVu/' + categoryId,
                         method: 'DELETE',
                         success: function () {
                             alert('Xóa danh mục thành công.');
@@ -295,7 +295,7 @@
         // Hàm gọi API để lấy tất cả các chức vụ
         async function getAllRoles() {
             try {
-                const roles = await apiCall('https://shopdogiadungapi.onrender.com/api/ChucVu');
+                const roles = await apiCall('https://localhost:7248/api/ChucVu');
                 return roles;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách chức vụ:', error);
@@ -307,7 +307,7 @@
         // Hàm gọi API để lấy tất cả các chức năng
         async function getAllFunctions() {
             try {
-                const functions = await apiCall('https://shopdogiadungapi.onrender.com/api/ChucNang');
+                const functions = await apiCall('https://localhost:7248/api/ChucNang');
                 return functions;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách chức năng:', error);
@@ -319,7 +319,7 @@
         // Hàm gọi API để lấy tất cả các hành động
         async function getAllActions() {
             try {
-                const actions = await apiCall('https://shopdogiadungapi.onrender.com/api/HanhDong');
+                const actions = await apiCall('https://localhost:7248/api/HanhDong');
                 return actions;
             } catch (error) {
                 console.error('Lỗi khi lấy danh sách hành động:', error);
@@ -366,7 +366,7 @@
             console.log("Tất cả hành động: ", allActions);
 
             // Lấy tất cả các chức vụ được gán cho người dùng
-            const rolePermissions = await apiCall(`https://shopdogiadungapi.onrender.com/api/ChucVu/${userId}/permissions`);
+            const rolePermissions = await apiCall(`https://localhost:7248/api/ChucVu/${userId}/permissions`);
             console.log("Chức vụ: ", rolePermissions);
 
             // Tạo một bản đồ để dễ dàng tra cứu quyền theo chức vụ và chức năng
@@ -539,7 +539,7 @@
 
                 // Gửi các quyền được chọn cho từng chức vụ lên API (sử dụng POST)
                 const permissionPromises = Object.keys(permissionsByRole).map(userId => {
-                    return apiCall(`https://shopdogiadungapi.onrender.com/api/ChucVu/${userId}/permissions`, 'POST', { permissions: permissionsByRole[userId] });
+                    return apiCall(`https://localhost:7248/api/ChucVu/${userId}/permissions`, 'POST', { permissions: permissionsByRole[userId] });
                 });
 
                 await Promise.all(permissionPromises);

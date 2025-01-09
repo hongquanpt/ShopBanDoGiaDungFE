@@ -61,7 +61,7 @@
     // Lấy danh sách sản phẩm từ API và hiển thị
     function loadProducts(pageIndex = 1, pageSize = 6) {
         $.ajax({
-            url: `https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/AllProduct?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+            url: `https://localhost:7248/api/HomeControllerAPI/AllProduct?pageIndex=${pageIndex}&pageSize=${pageSize}`,
             type: "GET",
             dataType: "json",
             success: function (response) {
@@ -127,7 +127,7 @@
 
         // Gọi API để kiểm tra trạng thái hàng trước khi thêm
         $.ajax({
-            url: 'https://shopdogiadungapi.onrender.com/api/CartControllerAPI/AddItem',
+            url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
             type: 'POST',
             dataType: 'json',
             contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON

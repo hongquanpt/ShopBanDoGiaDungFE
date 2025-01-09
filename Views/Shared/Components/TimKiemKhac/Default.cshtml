@@ -75,7 +75,7 @@
         // Hàm tải danh mục và hãng từ API
         function loadCategoriesAndBrands() {
             $.ajax({
-                url: "https://shopdogiadungapi.onrender.com/api/Category/danhmucs",
+                url: "https://localhost:7248/api/Category/danhmucs",
                     type: "GET",
                 dataType: "json",
                 headers: { "Authorization": `Bearer ${token}` },
@@ -99,7 +99,7 @@
             });
 
         $.ajax({
-                url: "https://shopdogiadungapi.onrender.com/api/Brand/hangs",
+                url: "https://localhost:7248/api/Brand/hangs",
                 type: "GET",
                 dataType: "json",
                 headers: { "Authorization": `Bearer ${token}` },

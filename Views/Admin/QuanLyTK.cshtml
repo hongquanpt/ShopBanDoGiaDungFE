@@ -270,7 +270,7 @@
                 let allRoles = [];
                 async function getAllRoles() {
                     try {
-                        const roles = await apiCall('https://shopdogiadungapi.onrender.com/api/ChucVu');
+                        const roles = await apiCall('https://localhost:7248/api/ChucVu');
                         allRoles = roles; // Lưu danh sách roles để sử dụng trong loadUsers
                         return roles;
                     } catch (error) {
@@ -283,7 +283,7 @@
                 // Gọi API để lấy danh sách chức năng
                 async function getAllFunctions() {
                     try {
-                        const functions = await apiCall('https://shopdogiadungapi.onrender.com/api/ChucNang');
+                        const functions = await apiCall('https://localhost:7248/api/ChucNang');
                         return functions;
                     } catch (error) {
                         console.error('Lỗi khi lấy danh sách chức năng:', error);
@@ -295,7 +295,7 @@
                 // Gọi API để lấy danh sách hành động
                 async function getAllActions() {
                     try {
-                        const actions = await apiCall('https://shopdogiadungapi.onrender.com/api/HanhDong');
+                        const actions = await apiCall('https://localhost:7248/api/HanhDong');
                         return actions;
                     } catch (error) {
                         console.error('Lỗi khi lấy danh sách hành động:', error);
@@ -307,7 +307,7 @@
                 // Gọi API để lấy danh sách tài khoản
                 async function loadUsers() {
                     try {
-                        const users = await apiCall('https://shopdogiadungapi.onrender.com/api/TaiKhoan');
+                        const users = await apiCall('https://localhost:7248/api/TaiKhoan');
 
                         const tbody = $('#userTable tbody');
                         tbody.empty();
@@ -397,7 +397,7 @@
 
                             try {
                                 // Gửi danh sách roleIds lên API (sử dụng POST)
-                                await apiCall(`https://shopdogiadungapi.onrender.com/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: selectedRoles.map(id => parseInt(id)) });
+                                await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: selectedRoles.map(id => parseInt(id)) });
 
                                 loadUsers(); // Tải lại danh sách người dùng sau khi cập nhật
                             } catch (error) {
@@ -431,8 +431,8 @@
 
                     if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
                         try {
-                            await apiCall(`https://shopdogiadungapi.onrender.com/api/TaiKhoan/delete/${userId}`, 'DELETE');
-                            alert('Xóa tài khoản thành công');
+                            await apiCall(`https://localhost:7248/api/TaiKhoan/delete/${userId}`, 'DELETE');
+                            
                             location.reload();
                         } catch (error) {
                             console.error('Lỗi khi xóa tài khoản:', error);
@@ -457,11 +457,11 @@
                         ]);
 
                         // Lấy tất cả các chức vụ được gán cho người dùng
-                        const userRoles = await apiCall(`https://shopdogiadungapi.onrender.com/api/TaiKhoan/${userId}/roles`);
+                        const userRoles = await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`);
 
                         // Lấy quyền của từng chức vụ được gán cho người dùng
                         const rolePermissionsPromises = userRoles.map(role =>
-                            apiCall(`https://shopdogiadungapi.onrender.com/api/ChucVu/${role.maChucVu}/permissions`)
+                            apiCall(`https://localhost:7248/api/ChucVu/${role.maChucVu}/permissions`)
                                 .then(perms => ({ roleId: role.maChucVu, permissions: perms }))
                                 .catch(err => {
                                     console.error(`Lỗi khi lấy quyền của chức vụ ${role.maChucVu}:`, err);
@@ -588,11 +588,11 @@
                         });
 
                         // Gửi các chức vụ được chọn lên API (sử dụng POST)
-                        await apiCall(`https://shopdogiadungapi.onrender.com/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: rolesToAssign });
+                        await apiCall(`https://localhost:7248/api/TaiKhoan/${userId}/roles`, 'POST', { roleIds: rolesToAssign });
 
                         // Gửi các quyền được chọn cho từng chức vụ lên API (sử dụng POST)
                         const permissionPromises = Object.keys(permissionsToAssign).map(roleId => {
-                            return apiCall(`https://shopdogiadungapi.onrender.com/api/ChucVu/${roleId}/permissions`, 'POST', { permissions: permissionsToAssign[roleId] });
+                            return apiCall(`https://localhost:7248/api/ChucVu/${roleId}/permissions`, 'POST', { permissions: permissionsToAssign[roleId] });
                         });
 
                         await Promise.all(permissionPromises);
@@ -629,7 +629,7 @@
 
                         // Lấy tất cả các quyền của mỗi chức vụ
                         const rolePermissionsPromises = allRoles.map(role =>
-                            apiCall(`https://shopdogiadungapi.onrender.com/api/ChucVu/${role.maChucVu}/permissions`)
+                            apiCall(`https://localhost:7248/api/ChucVu/${role.maChucVu}/permissions`)
                                 .then(perms => ({ roleId: role.maChucVu, permissions: perms }))
                                 .catch(err => {
                                     console.error(`Lỗi khi lấy quyền của chức vụ ${role.maChucVu}:`, err);
@@ -817,7 +817,7 @@
 
                         // Gửi các quyền được chọn cho từng chức vụ lên API (sử dụng POST)
                         const permissionPromises = Object.keys(permissionsByRole).map(roleId => {
-                            return apiCall(`https://shopdogiadungapi.onrender.com/api/ChucVu/${roleId}/permissions`, 'POST', { permissions: permissionsByRole[roleId] });
+                            return apiCall(`https://localhost:7248/api/ChucVu/${roleId}/permissions`, 'POST', { permissions: permissionsByRole[roleId] });
                         });
 
                         await Promise.all(permissionPromises);
@@ -879,7 +879,7 @@
 
                     try {
                         // Gọi API để thêm tài khoản mới
-                        const response = await fetch('https://shopdogiadungapi.onrender.com/api/AccessControllerAPI/register', {
+                        const response = await fetch('https://localhost:7248/api/AccessControllerAPI/register', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -891,7 +891,7 @@
                         const result = await response.json();
 
                         if (response.ok) {
-                            alert('Thêm tài khoản thành công!');
+                            
                             // Đóng modal và cập nhật lại bảng
                             $('#addUserModal').modal('hide');
                             location.reload(); // Hàm để tải lại bảng người dùng

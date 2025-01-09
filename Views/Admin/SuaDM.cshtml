@@ -107,7 +107,7 @@
         console.log(categoryId);
         // Gọi API để lấy thông tin danh mục sản phẩm
         $.ajax({
-            url: `https://shopdogiadungapi.onrender.com/api/Category/danhmucs/${categoryId}`, // URL API để lấy thông tin danh mục
+            url: `https://localhost:7248/api/Category/danhmucs/${categoryId}`, // URL API để lấy thông tin danh mục
             method: 'GET',
             contentType: 'application/json',
             dataType: 'json',
@@ -176,7 +176,7 @@
 
         // Gửi yêu cầu cập nhật danh mục sản phẩm
         $.ajax({
-            url: `https://shopdogiadungapi.onrender.com/api/Category/danhmucs/${id}`, // URL API để cập nhật danh mục
+            url: `https://localhost:7248/api/Category/danhmucs/${id}`, // URL API để cập nhật danh mục
             method: 'PUT', // Sử dụng PUT để cập nhật
             contentType: 'application/json', // Gửi dữ liệu dưới dạng JSON
             dataType: 'json',

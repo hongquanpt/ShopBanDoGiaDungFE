@@ -175,14 +175,12 @@
 
 <script>
     $(document).ready(function () {
-        // Lấy token từ localStorage
         var token = localStorage.getItem('token');
         if (!token) {
             window.location.href = '/Access/Login';
             return;
         }
 
-        // Giải mã token để lấy vai trò
         var decodedToken = jwt_decode(token);
         var permissions = decodedToken.permissions || [];
         var canView = permissions.includes("QuanLyDonHang:Xem");
@@ -190,14 +188,11 @@
         var canEdit = permissions.includes("QuanLyDonHang:Sua");
         var canDelete = permissions.includes("QuanLyDonHang:Xoa");
 
-        // Kiểm tra quyền xem
         if (!canView) {
             alert('Bạn không có quyền truy cập trang này.');
             window.location.href = '/';
             return;
         }
-
-        // Ẩn các cột hành động nếu không có quyền
         if (!canEdit) {
             $('.confirm-column').hide();
         }
@@ -208,17 +203,19 @@
             $('.cancel-column').hide();
         }
 
-        // Thiết lập token cho tất cả các yêu cầu AJAX
         $.ajaxSetup({
             beforeSend: function (xhr) {
                 xhr.setRequestHeader('Authorization', 'Bearer ' + token);
             }
         });
 
-        // Hàm tải tất cả đơn hàng
+        //=========================
+        // HÀM LOAD ĐƠN HÀNG
+        //=========================
+
         function loadAllOrders(page = 1, pageSize = 1000) {
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/Order/orders?page=${page}&pageSize=${pageSize}`,
+                url: `https://localhost:7248/api/Order/orders?page=${page}&pageSize=${pageSize}`,
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -230,10 +227,9 @@
             });
         }
 
-        // Hàm tải đơn hàng theo trạng thái
         function loadOrdersByStatus(status, tableSelector, page = 1, pageSize = 1000) {
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/Order/orders?tinhTrang=${status}&page=${page}&pageSize=${pageSize}`,
+                url: `https://localhost:7248/api/Order/orders?tinhTrang=${status}&page=${page}&pageSize=${pageSize}`,
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -245,44 +241,30 @@
             });
         }
 
-        // Hàm hiển thị dữ liệu đơn hàng trong bảng
         function populateOrderTable(tableSelector, orders, status) {
-            // Hủy DataTable trước khi thao tác DOM
             if ($.fn.DataTable.isDataTable(tableSelector)) {
                 $(tableSelector).DataTable().clear().destroy();
             }
-
             var tbody = $(tableSelector + ' tbody');
             tbody.empty();
 
             orders.forEach(function (order) {
                 var tinhTrang = '';
                 switch (order.tinhTrang) {
-                    case 0:
-                        tinhTrang = 'Chưa thanh toán';
-                        break;
-                    case 1:
-                        tinhTrang = 'Chờ xác nhận';
-                        break;
-                    case 2:
-                        tinhTrang = 'Đang giao hàng';
-                        break;
-                    case 3:
-                        tinhTrang = 'Đã hoàn thành';
-                        break;
-                    case 4:
-                        tinhTrang = 'Đã hủy';
-                        break;
-                    default:
-                        tinhTrang = 'Không xác định';
+                    case 0: tinhTrang = 'Chưa thanh toán'; break;
+                    case 1: tinhTrang = 'Chờ xác nhận';    break;
+                    case 2: tinhTrang = 'Đang giao hàng';  break;
+                    case 3: tinhTrang = 'Đã hoàn thành';   break;
+                    case 4: tinhTrang = 'Đã hủy';          break;
+                    default: tinhTrang = 'Không xác định'; break;
                 }
 
                 var actionButtons = '<td><button class="btn btn-success view-order-detail" data-id="' + order.maDonHang + '">Chi tiết</button></td>';
-
-                // Thêm các nút hành động tùy theo trạng thái
-                if (status === 1) { // Chờ xác nhận
+                if (status === 1) {
+                    // Chờ xác nhận
                     actionButtons += '<td><button class="btn btn-primary confirm-order" data-id="' + order.maDonHang + '">Xác nhận</button></td>';
-                } else if (status === 2) { // Đang vận chuyển
+                } else if (status === 2) {
+                    // Đang vận chuyển
                     actionButtons += '<td><button class="btn btn-success complete-order" data-id="' + order.maDonHang + '">Hoàn thành</button></td>';
                     actionButtons += '<td><button class="btn btn-danger cancel-order" data-id="' + order.maDonHang + '">Hủy đơn</button></td>';
                 }
@@ -299,7 +281,6 @@
                 tbody.append(row);
             });
 
-            // Khởi tạo lại DataTable sau khi dữ liệu đã được thêm vào
             $(tableSelector).DataTable({
                 "paging": true,
                 "ordering": true,
@@ -317,18 +298,16 @@
             });
         }
 
-        // Tải danh sách đơn hàng khi trang được tải
+        // Gọi load data ban đầu
         loadAllOrders();
         loadOrdersByStatus(1, '#pendingOrdersTable');
         loadOrdersByStatus(2, '#shippingOrdersTable');
         loadOrdersByStatus(3, '#completedOrdersTable');
         loadOrdersByStatus(4, '#canceledOrdersTable');
 
-        // Xử lý sự kiện chuyển tab để làm mới dữ liệu nếu cần
+        // Xử lý chuyển tab
         $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).attr('href'); // Lấy id của tab
-
-            // Làm mới dữ liệu của bảng khi chuyển tab
+            var target = $(e.target).attr('href');
             if (target === '#allOrders') {
                 loadAllOrders();
             } else if (target === '#pendingOrders') {
@@ -342,17 +321,14 @@
             }
         });
 
-        // Xử lý sự kiện xem chi tiết đơn hàng
+        // Xem chi tiết đơn hàng
         $(document).on('click', '.view-order-detail', function () {
             var orderId = $(this).data('id');
-
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/Order/orders/${orderId}/details`, // API lấy chi tiết đơn hàng
+                url: `https://localhost:7248/api/Order/orders/${orderId}/details`,
                 method: 'GET',
                 dataType: 'json',
                 success: function (data) {
-                    console.log(data);
-                    // Hiển thị dữ liệu trong modal
                     showOrderDetailModal(data);
                 },
                 error: function (error) {
@@ -361,7 +337,6 @@
             });
         });
 
-        // Hàm hiển thị modal chi tiết đơn hàng
         function showOrderDetailModal(orderDetails) {
             var modalBody = $('#orderDetailModal .modal-content');
             modalBody.empty();
@@ -388,7 +363,7 @@
                 content += '<tr>' +
                     '<td>' + item.maSanPham + '</td>' +
                     '<td><a href="/Product/Detail/' + item.maSanPham + '">' + item.tenSP + '</a></td>' +
-                    '<td><img src="' + item.anh + '" class="img-fluid" alt="Ảnh sản phẩm" style="max-width: 100px;" /></td>' +
+                    '<td><img src="' + item.anh + '" class="img-fluid" style="max-width: 100px;"/></td>' +
                     '<td>' + item.soLuong + '</td>' +
                     '<td>' + item.giaBan.toLocaleString() + ' VND</td>' +
                     '<td>' + item.thanhTien.toLocaleString() + ' VND</td>' +
@@ -396,25 +371,21 @@
             });
 
             content += '</tbody></table></div>';
-
             modalBody.append(content);
             $('#orderDetailModal').modal('show');
         }
 
-        // Xử lý sự kiện xác nhận đơn hàng
+        // Xác nhận đơn
         $(document).on('click', '.confirm-order', function () {
             var orderId = $(this).data('id');
-
             if (confirm('Bạn có chắc chắn muốn xác nhận đơn hàng này?')) {
                 $.ajax({
-                    url: `https://shopdogiadungapi.onrender.com/api/Order/orders/confirm/${orderId}`, // API xác nhận đơn hàng
+                    url: `https://localhost:7248/api/Order/orders/confirm/${orderId}`,
                     method: 'POST',
                     success: function () {
-                        alert('Xác nhận đơn hàng thành công');
-                        // Cập nhật lại bảng chờ xác nhận và đang vận chuyển
+                       
                         loadOrdersByStatus(1, '#pendingOrdersTable');
                         loadOrdersByStatus(2, '#shippingOrdersTable');
-                        // Cập nhật lại bảng tất cả đơn hàng
                         loadAllOrders();
                     },
                     error: function (error) {
@@ -425,20 +396,17 @@
             }
         });
 
-        // Xử lý sự kiện hoàn thành đơn hàng
+        // Hoàn thành đơn
         $(document).on('click', '.complete-order', function () {
             var orderId = $(this).data('id');
-
             if (confirm('Bạn có chắc chắn muốn hoàn thành đơn hàng này?')) {
                 $.ajax({
-                    url: `https://shopdogiadungapi.onrender.com/api/Order/orders/ship/${orderId}`, // API hoàn thành đơn hàng
+                    url: `https://localhost:7248/api/Order/orders/ship/${orderId}`,
                     method: 'POST',
                     success: function () {
-                        alert('Đơn hàng đã được đánh dấu hoàn thành');
-                        // Cập nhật lại bảng đang vận chuyển và đã hoàn thành
+                       
                         loadOrdersByStatus(2, '#shippingOrdersTable');
                         loadOrdersByStatus(3, '#completedOrdersTable');
-                        // Cập nhật lại bảng tất cả đơn hàng
                         loadAllOrders();
                     },
                     error: function (error) {
@@ -449,20 +417,17 @@
             }
         });
 
-        // Xử lý sự kiện hủy đơn hàng
+        // Hủy đơn
         $(document).on('click', '.cancel-order', function () {
             var orderId = $(this).data('id');
-
             if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
                 $.ajax({
-                    url: `https://shopdogiadungapi.onrender.com/api/Order/orders/cancel/${orderId}`, // API hủy đơn hàng
+                    url: `https://localhost:7248/api/Order/orders/cancel/${orderId}`,
                     method: 'POST',
                     success: function () {
-                        alert('Đơn hàng đã được hủy');
-                        // Cập nhật lại bảng đang vận chuyển và đã hủy
+                        
                         loadOrdersByStatus(2, '#shippingOrdersTable');
                         loadOrdersByStatus(4, '#canceledOrdersTable');
-                        // Cập nhật lại bảng tất cả đơn hàng
                         loadAllOrders();
                     },
                     error: function (error) {
@@ -473,9 +438,38 @@
             }
         });
 
+  
+        const orderHubConnection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:7248/orderhub", {
+                accessTokenFactory: () => token // nếu hub có [Authorize], gửi token
+            })
+            .build();
+
+        orderHubConnection.start()
+            .then(() => {
+                console.log("OrderHub connected (Admin)");
+                // Gọi RegisterAdmin trên hub
+                orderHubConnection.invoke("RegisterAdmin", "admin")
+                    .then(() => console.log("Admin joined group 'admin'"))
+                    .catch(err => console.error("Error join group:", err));
+            })
+            .catch(err => console.error("SignalR connection error:", err));
+
+        // Lắng nghe sự kiện "ReceiveNewOrder" => load lại các bảng
+        orderHubConnection.on("ReceiveNewOrder", function (newOrder) {
+            console.log("Có đơn hàng mới:", newOrder);
+
+            // Gọi hàm loadAllOrders, loadOrdersByStatus để cập nhật
+            loadAllOrders();
+            loadOrdersByStatus(1, '#pendingOrdersTable');
+
+            // Hoặc tuỳ logic:
+            // - Show thông báo popup
+            // Swal.fire("Có đơn hàng mới!", `Người nhận: ${newOrder.Ten}`, "info");
+        });
+
     });
 </script>
-
 <!-- Các thư viện JavaScript cần thiết -->
 <script src="~/Admin/plugins/jquery/jquery.min.js"></script>
 <!-- Bootstrap 4 -->

@@ -224,7 +224,7 @@
 
                 // Gọi API để lấy dữ liệu tài khoản theo mã tài khoản
                 $.ajax({
-                    url: `https://shopdogiadungapi.onrender.com/api/Account/accounts/${maTaiKhoan}`,
+                    url: `https://localhost:7248/api/Account/accounts/${maTaiKhoan}`,
                     method: 'GET',
                     dataType: 'json',
                     beforeSend: function (xhr) {
@@ -356,7 +356,7 @@
 
                 // Gọi API để cập nhật thông tin tài khoản
                 $.ajax({
-                    url: 'https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/ChangeProfile',
+                    url: 'https://localhost:7248/api/HomeControllerAPI/ChangeProfile',
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(profileData),

@@ -117,7 +117,7 @@
 
         // Gọi API để kiểm tra trạng thái hàng trước khi thêm
         $.ajax({
-            url: 'https://shopdogiadungapi.onrender.com/api/CartControllerAPI/AddItem',
+            url: 'https://localhost:7248/api/CartControllerAPI/AddItem',
             type: 'POST',
             dataType: 'json',
             contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON
@@ -216,7 +216,7 @@
                 Id: id
             };
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/HomeControllerAPI/ProductDetail`,
+                url: `https://localhost:7248/api/HomeControllerAPI/ProductDetail`,
                 type: 'POST',
                 dataType: 'json',
                 contentType: 'application/json', // Đảm bảo gửi dữ liệu dưới dạng JSON

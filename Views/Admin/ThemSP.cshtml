@@ -122,7 +122,7 @@
         }
         // Gọi API để lấy danh sách danh mục sản phẩm và điền vào select #category
         $.ajax({
-            url: 'https://shopdogiadungapi.onrender.com/api/Category/danhmucs',
+            url: 'https://localhost:7248/api/Category/danhmucs',
             method: 'GET',
             dataType: 'json',
             success: function (data) {
@@ -139,7 +139,7 @@
 
         // Gọi API để lấy danh sách hãng sản xuất và điền vào select #brand
         $.ajax({
-            url: 'https://shopdogiadungapi.onrender.com/api/Brand/hangs',
+            url: 'https://localhost:7248/api/Brand/hangs',
             method: 'GET',
             dataType: 'json',
             success: function (data) {
@@ -183,14 +183,14 @@
             console.log("Hang:", formData.get("Hang"));
             console.log("Images:", formData.getAll("images"));
             $.ajax({
-                url: 'https://shopdogiadungapi.onrender.com/api/Product/ThemSP',
+                url: 'https://localhost:7248/api/Product/ThemSP',
                 type: 'POST',
                 data: formData,
                 processData: false,
                 contentType: false,
                 success: function () {
-                    alert('Thêm sản phẩm thành công!');
-                    // window.location.href = '@Url.Action("QuanLySP", "Admin")';
+                    
+                    window.location.href = '@Url.Action("QuanLySP", "Admin")';
                 },
                 error: function (xhr) {
                     console.error('Lỗi khi thêm sản phẩm:', xhr.responseText);

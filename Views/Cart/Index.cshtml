@@ -120,7 +120,7 @@
 
             // Gọi API để kiểm tra tồn kho
             $.ajax({
-                url: `https://shopdogiadungapi.onrender.com/api/Product/UpdateCartItemQuantity?productId=${productId}&quantity=${newQuantity}`,
+                url: `https://localhost:7248/api/Product/UpdateCartItemQuantity?productId=${productId}&quantity=${newQuantity}`,
                 type: 'POST',
                 dataType: 'json',
                 success: function (response) {
@@ -240,7 +240,7 @@
 
         // Gọi API thanh toán
         $.ajax({
-            url: 'https://shopdogiadungapi.onrender.com/api/CartControllerAPI/ThanhToan',
+            url: 'https://localhost:7248/api/CartControllerAPI/ThanhToan',
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({

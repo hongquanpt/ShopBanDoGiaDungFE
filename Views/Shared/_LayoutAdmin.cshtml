@@ -174,7 +174,7 @@
 
                 // Lấy danh sách user
 
-                fetch('https://shopdogiadungapi.onrender.com/api/Chat/all', {
+                fetch('https://localhost:7248/api/Chat/all', {
                     headers: authHeaders()
                 })
                     .then(res => {
@@ -196,7 +196,7 @@
 
                 // Kết nối SignalR
                 const connection = new signalR.HubConnectionBuilder()
-                    .withUrl("https://shopdogiadungapi.onrender.com/chathub")
+                    .withUrl("https://localhost:7248/chathub")
                     .build();
 
                 connection.start()
@@ -226,7 +226,7 @@
                         .then(() => console.log("Registered admin to user group:", currentUserId))
                         .catch(err => console.error("Error registering admin:", err));
 
-                    const msgUrl = `https://shopdogiadungapi.onrender.com/api/Chat/messages/${currentUserId}`;
+                    const msgUrl = `https://localhost:7248/api/Chat/messages/${currentUserId}`;
                     console.log("Fetching messages from:", msgUrl);
                     fetch(msgUrl, { headers: authHeaders() })
                         .then(res => {
@@ -266,7 +266,7 @@
                         .catch(err => console.error("Error sending via SignalR:", err));
 
                     // Lưu tin nhắn vào DB
-                    const sendUrl = `https://shopdogiadungapi.onrender.com/api/Chat/${currentUserId}/send`;
+                    const sendUrl = `https://localhost:7248/api/Chat/${currentUserId}/send`;
                     console.log("Sending message to API:", sendUrl);
                     fetch(sendUrl, {
                         method: 'POST',
@@ -296,32 +296,53 @@
                         }
                     });
 
-                    // Lấy đơn hàng chờ xử lý
-                    $.ajax({
-                        url: 'https://shopdogiadungapi.onrender.com/api/Order/pending',
-                        method: 'GET',
-                        success: function (response) {
-                            console.log("Pending orders:", response);
-                            $('#notificationCount').text(response.length);
-                            $('#notificationHeader').text(response.length + ' đơn hàng cần xử lý');
+                          function fetchPendingOrders() {
+                $.ajax({
+                    url: 'https://localhost:7248/api/Order/pending',
+                    method: 'GET',
+                    success: function (response) {
+                        console.log("Pending orders:", response);
+                        $('#notificationCount').text(response.length);
+                        $('#notificationHeader').text(response.length + ' đơn hàng cần xử lý');
 
-                            var notificationMenu = $('#notificationMenu');
-                            notificationMenu.find('.dropdown-item:not(.dropdown-footer)').remove();
+                        var notificationMenu = $('#notificationMenu');
+                        notificationMenu.find('.dropdown-item:not(.dropdown-footer)').remove();
 
-                            response.forEach(function (order) {
-                                var item = `
-                                    <a href="/Admin/QuanLyDH/${order.maDonHang}" class="dropdown-item">
-                                        <i class="fas fa-envelope mr-2"></i> Mã đơn hàng: ${order.maDonHang}
-                                        <span class="float-right text-muted text-sm">Ngày lập: ${order.ngayLap}</span>
-                                    </a>`;
-                                notificationMenu.append(item);
-                            });
-                        },
-                        error: function (error) {
-                            console.error('Lỗi khi lấy danh sách đơn hàng:', error);
-                        }
-                    });
+                        response.forEach(function (order) {
+                            var item = `
+                                <a href="/Admin/QuanLyDH/${order.maDonHang}" class="dropdown-item">
+                                    <i class="fas fa-envelope mr-2"></i> Mã đơn hàng: ${order.maDonHang}
+                                    <span class="float-right text-muted text-sm">Ngày lập: ${order.ngayLap}</span>
+                                </a>`;
+                            notificationMenu.append(item);
+                        });
+                    },
+                    error: function (error) {
+                        console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+                    }
+                });
+            }
 
+            // Lấy pending orders khi load trang
+            fetchPendingOrders();
+                    // Kết nối SignalR
+            const orderHubConnection = new signalR.HubConnectionBuilder()
+                .withUrl("https://localhost:7248/orderHub") // tuỳ cấu hình
+                .build();
+
+            orderHubConnection.start().then(() => {
+                console.log("Admin connected to OrderHub");
+                // Nếu dùng group
+                // orderHubConnection.invoke("RegisterAdmin", "admin");
+            }).catch(err => console.error("SignalR error:", err));
+
+            // Nhận sự kiện "ReceiveNewOrder"
+            orderHubConnection.on("ReceiveNewOrder", (newOrder) => {
+                console.log("Có đơn hàng mới:", newOrder);
+                // Gọi API để cập nhật danh sách pending
+                fetchPendingOrders();
+                // Hoặc hiện popup tuỳ ý
+            });
                     $('#logoutBtn').on('click', function (e) {
                         e.preventDefault();
                         Swal.fire({
@@ -341,16 +362,16 @@
                 });
 
                 function buildMenu(token) {
-                    var menuItems = [
-                        { text: 'Trang chủ', url: '/Admin/Index', icon: 'fas fa-home', permission: null },
-                        { text: 'Quản lý tài khoản', url: '/Admin/QuanLyTK', icon: 'fas fa-user', permission: 'QuanLyTaiKhoan:Xem' },
-                        { text: 'Quản lý chức vụ', url: '/Admin/QuanLyCV', icon: 'fas fa-user', permission: 'QuanLyChucVu:Xem' },
-                        { text: 'Quản lý danh mục', url: '/Admin/QuanLyDM', icon: 'fas fa-list', permission: 'QuanLyDanhMuc:Xem' },
-                        { text: 'Quản lý hãng', url: '/Admin/QuanLyHang', icon: 'fas fa-list', permission: 'QuanLyHang:Xem' },
-                        { text: 'Quản lý sản phẩm', url: '/Admin/QuanLySP', icon: 'fas fa-box', permission: 'QuanLySanPham:Xem' },
-                        { text: 'Quản lý đơn hàng', url: '/Admin/QuanLyDH', icon: 'fas fa-shopping-cart', permission: 'QuanLyDonHang:Xem' }
-                    ];
-
+                        var menuItems = [
+                            { text: 'Trang chủ', url: '/Admin/Index', icon: 'fas fa-home', permission: null },
+                            { text: 'Quản lý tài khoản', url: '/Admin/QuanLyTK', icon: 'fas fa-users-cog', permission: 'QuanLyTaiKhoan:Xem' },
+                            { text: 'Quản lý chức vụ', url: '/Admin/QuanLyCV', icon: 'fas fa-user-tag', permission: 'QuanLyChucVu:Xem' },
+                            { text: 'Quản lý danh mục', url: '/Admin/QuanLyDM', icon: 'fas fa-list-alt',  permission: 'QuanLyDanhMuc:Xem' },
+                            { text: 'Quản lý hãng', url: '/Admin/QuanLyHang', icon: 'fas fa-industry', permission: 'QuanLyHang:Xem' },
+                            { text: 'Quản lý sản phẩm', url: '/Admin/QuanLySP', icon: 'fas fa-boxes', permission: 'QuanLySanPham:Xem' },
+                            { text: 'Quản lý đơn hàng', url: '/Admin/QuanLyDH', icon: 'fas fa-shopping-cart', permission: 'QuanLyDonHang:Xem' },
+                            { text: 'Nhật ký hệ thống', url: '/Admin/Log', icon: 'fas fa-book', permission: 'Access:Xem' }
+                        ];
                     var menu = $('#mainMenu');
                     menu.empty();
 
