@@ -154,19 +154,7 @@
         var roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || decodedToken.role;
         console.log("Vai trò của người dùng:", roles);
 
-        // Kiểm tra xem người dùng có vai trò 'admin' hoặc 'manager' không
-        var hasAccess = false;
-        if (Array.isArray(roles)) {
-            hasAccess = roles.includes('admin') || roles.includes('manager');
-        } else {
-            hasAccess = roles === 'admin' || roles === 'manager';
-        }
-
-        if (!hasAccess) {
-            alert('Bạn không có quyền truy cập trang này.');
-            window.location.href = '/'; // Chuyển hướng đến trang chủ hoặc trang thông báo
-            return;
-        }
+      
 
         var tenhang = $('#tenhangmoi').val().trim();
         if (tenhang === "") {
